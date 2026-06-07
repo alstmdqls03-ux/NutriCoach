@@ -22,4 +22,11 @@ describe('safety filter', () => {
     const out = applySafety('벤치 60 했어', '잘했어요!');
     expect(out).toBe('잘했어요!');
   });
+
+  it('does not double-append when the model already volunteered a disclaimer', () => {
+    const modelReply = '무리하지 마세요. 증상이 지속되면 전문가 상담을 받는 것이 좋습니다.';
+    const out = applySafety('어깨 아파', modelReply);
+    expect(out).toBe(modelReply); // no second disclaimer appended
+    expect((out.match(/전문가/g) || []).length).toBe(1);
+  });
 });

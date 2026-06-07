@@ -8,8 +8,16 @@ export function detectPainSignal(userText: string): boolean {
   return PAIN_PATTERN.test(userText);
 }
 
+// The model often volunteers its own "see a professional / not medical advice"
+// note. Detect that so we don't append a SECOND (duplicate) disclaimer.
+const DISCLAIMER_SIGNAL = /의료\s*조언|전문가.{0,6}(상담|진료)|(의사|물리치료사)/;
+
 export function applySafety(userText: string, assistantText: string): string {
   if (!detectPainSignal(userText)) return assistantText;
-  if (assistantText.includes(SAFETY_DISCLAIMER)) return assistantText;
+  // Guarantee a disclaimer is present, but never two: if the reply already
+  // carries ours or the model's own, leave it; otherwise append the canonical one.
+  if (assistantText.includes(SAFETY_DISCLAIMER) || DISCLAIMER_SIGNAL.test(assistantText)) {
+    return assistantText;
+  }
   return assistantText + SAFETY_DISCLAIMER;
 }
