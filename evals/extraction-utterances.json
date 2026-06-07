@@ -1,0 +1,22 @@
+[
+  {"text":"벤치프레스 60kg 8회 3세트 했어","expect":{"tool":"log_workout","exercise":"벤치프레스","weight_kg":60,"reps":8,"sets":3}},
+  {"text":"스쿼트 100 5x5","expect":{"tool":"log_workout","exercise":"스쿼트","weight_kg":100,"reps":5,"sets":5}},
+  {"text":"데드리프트 140킬로 5회 1세트","expect":{"tool":"log_workout","exercise":"데드리프트","weight_kg":140,"reps":5,"sets":1}},
+  {"text":"오버헤드프레스 40kg 10회 3세트 RPE 8","expect":{"tool":"log_workout","exercise":"오버헤드프레스","weight_kg":40,"reps":10,"sets":3,"rpe":8}},
+  {"text":"바벨로우 70 8 4세트","expect":{"tool":"log_workout","exercise":"바벨로우","weight_kg":70,"reps":8,"sets":4}},
+  {"text":"인클라인 덤벨프레스 22.5kg 12회 3세트","expect":{"tool":"log_workout","exercise":"인클라인 덤벨프레스","weight_kg":22.5,"reps":12,"sets":3}},
+  {"text":"풀업 맨몸 10회 3세트","expect":{"tool":"log_workout","exercise":"풀업","weight_kg":0,"reps":10,"sets":3}},
+  {"text":"레그프레스 200kg 15회 4세트","expect":{"tool":"log_workout","exercise":"레그프레스","weight_kg":200,"reps":15,"sets":4}},
+  {"text":"라잉 트라이셉스 익스텐션 30kg 12 3","expect":{"tool":"log_workout","exercise":"라잉 트라이셉스 익스텐션","weight_kg":30,"reps":12,"sets":3}},
+  {"text":"벤치 80kg 5회 5세트 했고 어깨 약간 아팠어","expect":{"tool":"log_workout","exercise":"벤치","weight_kg":80,"reps":5,"sets":5,"pain":"어깨"}},
+  {"text":"어제 11시에 자서 오늘 7시에 일어났어","expect":{"tool":"log_sleep","bed_time":"23:00","wake_time":"07:00"}},
+  {"text":"새벽 1시 취침 아침 8시 기상","expect":{"tool":"log_sleep","bed_time":"01:00","wake_time":"08:00"}},
+  {"text":"12시에 자고 6시 반에 깼어","expect":{"tool":"log_sleep","bed_time":"00:00","wake_time":"06:30"}},
+  {"text":"10시 반 취침 6시 기상 만족도 4","expect":{"tool":"log_sleep","bed_time":"22:30","wake_time":"06:00","satisfaction":4}},
+  {"text":"어젯밤 7시간 잤어","expect":{"tool":"log_sleep","duration_min":420}},
+  {"text":"이번 주 운동 어땠어?","expect":{"tool":"query_logs","type":"workout"}},
+  {"text":"지난 일주일 수면 어때?","expect":{"tool":"query_logs","type":"sleep"}},
+  {"text":"오늘 기록 보여줘","expect":{"tool":"query_logs"}},
+  {"text":"내 벤치 기록 추이 알려줘","expect":{"tool":"query_logs","type":"workout"}},
+  {"text":"요즘 잘 자고 있나?","expect":{"tool":"query_logs","type":"sleep"}}
+]
