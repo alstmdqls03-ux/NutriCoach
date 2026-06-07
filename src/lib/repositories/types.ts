@@ -25,6 +25,7 @@ export interface LogRepository {
 }
 
 export interface StoredMessage {
+  id: string;
   role: 'user' | 'assistant' | 'tool';
   content: string | null;
   tool_calls: unknown | null;
@@ -34,9 +35,9 @@ export interface StoredMessage {
 export interface MessageRepository {
   recentMessages(userId: string, limit: number): Promise<StoredMessage[]>;
   countMessages(userId: string): Promise<number>;
-  insertMessage(userId: string, msg: Omit<StoredMessage, 'created_at'>): Promise<void>;
+  insertMessage(userId: string, msg: Omit<StoredMessage, 'created_at' | 'id'>): Promise<void>;
   oldestMessages(userId: string, count: number): Promise<StoredMessage[]>;
-  deleteMessages(userId: string, beforeIsoExclusive: string): Promise<void>;
+  deleteMessageIds(userId: string, ids: string[]): Promise<void>;
 }
 
 export interface ProfileRepository {

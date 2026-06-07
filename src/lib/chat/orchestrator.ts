@@ -44,17 +44,23 @@ export async function runChat(args: RunChatArgs): Promise<RunChatResult> {
   const ctx = await loadContext(msgs, prof, userId, contextLimit);
   const convo: ChatMessage[] = [
     { role: 'system', content: buildSystemPrompt(ctx.summary) },
-    ...ctx.messages.map((m) => ({
-      role: m.role as ChatMessage['role'],
-      content: m.content,
-    })),
+    ...ctx.messages
+      // Only replay clean user/assistant-text turns. Stored tool rows and
+      // assistant-with-tool_calls rows would create dangling tool messages
+      // (missing tool_call_id linkage) and break the OpenAI API on later turns.
+      .filter((m) => m.role === 'user' || (m.role === 'assistant' && !m.tool_calls))
+      .map((m) => ({
+        role: m.role as ChatMessage['role'],
+        content: m.content,
+      })),
   ];
 
   let promptTokens = 0;
   let completionTokens = 0;
   let finalText = '';
+  let toolRounds = 0;
 
-  for (let round = 0; round <= maxToolRounds; round++) {
+  while (true) {
     const res = await chatWithRetry(llm, convo, toolDefinitions);
     promptTokens += res.usage.promptTokens;
     completionTokens += res.usage.completionTokens;
@@ -63,8 +69,11 @@ export async function runChat(args: RunChatArgs): Promise<RunChatResult> {
       finalText = res.content ?? '';
       break;
     }
+    if (toolRounds >= maxToolRounds) {
+      finalText = '요청을 처리했어요.';
+      break;
+    }
 
-    // persist the assistant turn that requested tools
     await msgs.insertMessage(userId, {
       role: 'assistant', content: res.content, tool_calls: res.toolCalls,
     });
@@ -80,10 +89,7 @@ export async function runChat(args: RunChatArgs): Promise<RunChatResult> {
       await msgs.insertMessage(userId, { role: 'tool', content: toolOut, tool_calls: null });
       convo.push({ role: 'tool', content: toolOut, toolCallId: call.id, name: call.name });
     }
-    // loop continues: model now sees tool results and produces the final reply
-    if (round === maxToolRounds) {
-      finalText = '요청을 처리했어요.';
-    }
+    toolRounds++;
   }
 
   const safeReply = applySafety(userMessage, finalText);

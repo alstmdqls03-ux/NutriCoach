@@ -75,4 +75,25 @@ describe('runChat', () => {
     expect(calls).toBe(2);
     expect(res.reply).toContain('답했어요');
   });
+
+  it('does not replay raw tool / tool_call messages on a later turn', async () => {
+    const d = deps();
+    const llm = new ScriptedLLMProvider([
+      // turn 1: model logs a workout, then replies
+      { content: null, usage: { promptTokens: 1, completionTokens: 1 },
+        toolCalls: [{ id: 't1', name: 'log_workout',
+          arguments: { exercise: '벤치', weight_kg: 60, reps: 8, sets: 3 } }] },
+      { content: '기록했어요', toolCalls: [], usage: { promptTokens: 1, completionTokens: 1 } },
+      // turn 2: model just replies with text
+      { content: '이번 주 좋았어요', toolCalls: [], usage: { promptTokens: 1, completionTokens: 1 } },
+    ]);
+    const base = { logs: d.logs, msgs: d.msgs, prof: d.prof, now: NOW, maxToolRounds: 2, contextLimit: 20 };
+    await runChat({ userId: 'u1', userMessage: '벤치 60 8회 3세트', llm, ...base });
+    await runChat({ userId: 'u1', userMessage: '이번 주 어땠어?', llm, ...base });
+    const lastCall = llm.calls[llm.calls.length - 1];
+    expect(lastCall.messages.some((m) => m.role === 'tool')).toBe(false);
+    expect(lastCall.messages.some((m) => m.role === 'assistant' && m.toolCalls)).toBe(false);
+    // sanity: the earlier user message is still replayed
+    expect(lastCall.messages.some((m) => m.role === 'user' && m.content === '벤치 60 8회 3세트')).toBe(true);
+  });
 });

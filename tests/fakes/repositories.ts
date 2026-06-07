@@ -21,20 +21,21 @@ export class InMemoryLogRepository implements LogRepository {
 
 export class InMemoryMessageRepository implements MessageRepository {
   rows: (StoredMessage & { userId: string })[] = [];
+  private seq = 0;
   async recentMessages(userId: string, limit: number) {
     return this.rows.filter((r) => r.userId === userId).slice(-limit).map(strip);
   }
   async countMessages(userId: string) {
     return this.rows.filter((r) => r.userId === userId).length;
   }
-  async insertMessage(userId: string, msg: Omit<StoredMessage, 'created_at'>) {
-    this.rows.push({ ...msg, userId, created_at: new Date(2026, 0, 1, 0, 0, this.rows.length).toISOString() });
+  async insertMessage(userId: string, msg: Omit<StoredMessage, 'created_at' | 'id'>) {
+    this.rows.push({ ...msg, id: `m${++this.seq}`, userId, created_at: new Date(2026, 0, 1, 0, 0, this.rows.length).toISOString() });
   }
   async oldestMessages(userId: string, count: number) {
     return this.rows.filter((r) => r.userId === userId).slice(0, count).map(strip);
   }
-  async deleteMessages(userId: string, beforeIsoExclusive: string) {
-    this.rows = this.rows.filter((r) => !(r.userId === userId && r.created_at < beforeIsoExclusive));
+  async deleteMessageIds(userId: string, ids: string[]) {
+    this.rows = this.rows.filter((r) => !(r.userId === userId && ids.includes(r.id)));
   }
 }
 

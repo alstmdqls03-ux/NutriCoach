@@ -30,7 +30,7 @@ export function supabaseMessageRepository(sb: SupabaseClient): MessageRepository
   return {
     async recentMessages(userId, limit): Promise<StoredMessage[]> {
       const { data, error } = await sb.from('messages')
-        .select('role,content,tool_calls,created_at')
+        .select('id,role,content,tool_calls,created_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false }).limit(limit);
       if (error) throw new Error(`recentMessages failed: ${error.message}`);
@@ -52,16 +52,17 @@ export function supabaseMessageRepository(sb: SupabaseClient): MessageRepository
     },
     async oldestMessages(userId, count): Promise<StoredMessage[]> {
       const { data, error } = await sb.from('messages')
-        .select('role,content,tool_calls,created_at')
+        .select('id,role,content,tool_calls,created_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: true }).limit(count);
       if (error) throw new Error(`oldestMessages failed: ${error.message}`);
       return (data ?? []) as StoredMessage[];
     },
-    async deleteMessages(userId, beforeIsoExclusive) {
+    async deleteMessageIds(userId, ids) {
+      if (ids.length === 0) return;
       const { error } = await sb.from('messages').delete()
-        .eq('user_id', userId).lt('created_at', beforeIsoExclusive);
-      if (error) throw new Error(`deleteMessages failed: ${error.message}`);
+        .eq('user_id', userId).in('id', ids);
+      if (error) throw new Error(`deleteMessageIds failed: ${error.message}`);
     },
   };
 }
@@ -70,7 +71,7 @@ export function supabaseProfileRepository(sb: SupabaseClient): ProfileRepository
   return {
     async getRollingSummary(userId): Promise<string | null> {
       const { data, error } = await sb.from('profiles')
-        .select('rolling_summary').eq('id', userId).single();
+        .select('rolling_summary').eq('id', userId).maybeSingle();
       if (error) throw new Error(`getRollingSummary failed: ${error.message}`);
       return data?.rolling_summary ?? null;
     },

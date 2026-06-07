@@ -33,11 +33,5 @@ export async function compressOldMessages(
   const text = oldest.map((m) => `${m.role}: ${m.content ?? ''}`).join('\n');
   const next = [prior, summarize(text)].filter(Boolean).join('\n');
   await prof.setRollingSummary(userId, next);
-  const cutoff = oldest[oldest.length - 1].created_at;
-  // delete strictly older-or-equal handled by using the next message boundary:
-  await msgs.deleteMessages(userId, addEpsilon(cutoff));
-}
-
-function addEpsilon(iso: string): string {
-  return new Date(new Date(iso).getTime() + 1).toISOString();
+  await msgs.deleteMessageIds(userId, oldest.map((m) => m.id));
 }
