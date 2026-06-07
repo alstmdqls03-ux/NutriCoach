@@ -48,7 +48,7 @@ export async function runChat(args: RunChatArgs): Promise<RunChatResult> {
 
   const ctx = await loadContext(msgs, prof, userId, contextLimit);
   const convo: ChatMessage[] = [
-    { role: 'system', content: buildSystemPrompt(ctx.summary) },
+    { role: 'system', content: buildSystemPrompt(ctx.summary, now) },
     ...ctx.messages
       // Only replay clean user/assistant-text turns. Stored tool rows and
       // assistant-with-tool_calls rows would create dangling tool messages
