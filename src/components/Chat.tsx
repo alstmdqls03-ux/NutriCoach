@@ -44,6 +44,7 @@ export default function Chat() {
       <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
         <input value={input} onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && send()}
+          aria-label="메시지 입력"
           placeholder="예: 벤치 60kg 8회 3세트 했어"
           style={{ flex: 1, padding: 8 }} />
         <button onClick={send} disabled={busy}>보내기</button>
