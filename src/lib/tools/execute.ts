@@ -17,10 +17,14 @@ export async function executeTool(
     }
     case 'log_sleep': {
       const a = call.arguments as {
-        bed_time: string; wake_time: string; duration_min?: number; satisfaction?: number;
+        bed_time?: string; wake_time?: string; duration_min?: number; satisfaction?: number;
       };
-      await logs.insertLog({ userId, type: 'sleep', data: a, loggedAt: a.bed_time });
-      return `수면을 기록했어요: ${a.bed_time} ~ ${a.wake_time}`;
+      // logged_at is timestamptz NOT NULL. bed_time may be missing, time-only,
+      // or a relative phrase — fall back to now so the sleep is never dropped.
+      const parsed = Date.parse(a.bed_time ?? '');
+      const loggedAt = Number.isNaN(parsed) ? nowIso : new Date(parsed).toISOString();
+      await logs.insertLog({ userId, type: 'sleep', data: a, loggedAt });
+      return `수면을 기록했어요: ${a.bed_time ?? '시간 미상'} ~ ${a.wake_time ?? '시간 미상'}`;
     }
     case 'query_logs': {
       const a = call.arguments as { type?: 'workout' | 'sleep'; date_from?: string; date_to?: string };

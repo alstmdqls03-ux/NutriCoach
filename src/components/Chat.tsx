@@ -19,8 +19,12 @@ export default function Chat() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text }),
       });
-      const json = await res.json();
-      setTurns((t) => [...t, { role: 'assistant', text: json.reply ?? '오류가 났어요.' }]);
+      if (res.status === 401) { window.location.href = '/login'; return; }
+      const json = await res.json().catch(() => ({} as { reply?: string }));
+      const reply = typeof json.reply === 'string' && json.reply.trim()
+        ? json.reply
+        : '오류가 났어요. 다시 시도해주세요.';
+      setTurns((t) => [...t, { role: 'assistant', text: reply }]);
     } finally {
       setBusy(false);
     }

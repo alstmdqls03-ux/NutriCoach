@@ -14,7 +14,12 @@ async function chatWithRetry(
 ): Promise<LLMResponse> {
   try {
     return await llm.chat(messages, tools);
-  } catch {
+  } catch (e) {
+    // Only retry transient failures (network / 429 / 5xx). A 4xx (bad request,
+    // invalid schema, context too long) won't succeed on retry — fail fast.
+    const status = (e as { status?: number })?.status;
+    const transient = status === undefined || status === 429 || (status >= 500 && status <= 599);
+    if (!transient) throw e;
     return await llm.chat(messages, tools);
   }
 }
@@ -60,25 +65,13 @@ export async function runChat(args: RunChatArgs): Promise<RunChatResult> {
   let finalText = '';
   let toolRounds = 0;
 
-  while (true) {
-    const res = await chatWithRetry(llm, convo, toolDefinitions);
-    promptTokens += res.usage.promptTokens;
-    completionTokens += res.usage.completionTokens;
-
-    if (res.toolCalls.length === 0) {
-      finalText = res.content ?? '';
-      break;
-    }
-    if (toolRounds >= maxToolRounds) {
-      finalText = '요청을 처리했어요.';
-      break;
-    }
-
+  // Execute one assistant turn's tool calls: persist the assistant(tool_calls)
+  // row, run each tool (user-scoped), then persist + replay each tool result.
+  async function runToolCalls(res: LLMResponse): Promise<void> {
     await msgs.insertMessage(userId, {
       role: 'assistant', content: res.content, tool_calls: res.toolCalls,
     });
     convo.push({ role: 'assistant', content: res.content, toolCalls: res.toolCalls });
-
     for (const call of res.toolCalls) {
       let toolOut: string;
       try {
@@ -89,7 +82,29 @@ export async function runChat(args: RunChatArgs): Promise<RunChatResult> {
       await msgs.insertMessage(userId, { role: 'tool', content: toolOut, tool_calls: null });
       convo.push({ role: 'tool', content: toolOut, toolCallId: call.id, name: call.name });
     }
+  }
+
+  while (true) {
+    const res = await chatWithRetry(llm, convo, toolDefinitions);
+    promptTokens += res.usage.promptTokens;
+    completionTokens += res.usage.completionTokens;
+
+    if (res.toolCalls.length === 0) {
+      finalText = res.content ?? '';
+      break;
+    }
+
+    // Always execute the requested tools so a log is never silently dropped —
+    // even on the final allowed round.
+    await runToolCalls(res);
     toolRounds++;
+
+    if (toolRounds >= maxToolRounds) {
+      // Hit the tool-round cap. Tools above already ran (data saved); stop with
+      // an honest message instead of claiming everything is done.
+      finalText = '기록했어요. 더 처리할 게 남았으면 한 가지씩 다시 말씀해 주세요.';
+      break;
+    }
   }
 
   const safeReply = applySafety(userMessage, finalText);

@@ -31,7 +31,9 @@ export async function compressOldMessages(
   if (oldest.length === 0) return;
   const prior = (await prof.getRollingSummary(userId)) ?? '';
   const text = oldest.map((m) => `${m.role}: ${m.content ?? ''}`).join('\n');
-  const next = [prior, summarize(text)].filter(Boolean).join('\n');
+  // Cap the rolling summary so it can't grow unbounded across many compactions.
+  const MAX_SUMMARY = 2000;
+  const next = [prior, summarize(text)].filter(Boolean).join('\n').slice(-MAX_SUMMARY);
   await prof.setRollingSummary(userId, next);
   await msgs.deleteMessageIds(userId, oldest.map((m) => m.id));
 }

@@ -27,6 +27,29 @@ describe('executeTool', () => {
     expect(out).toContain('squat');
   });
 
+  it('log_sleep falls back to now when bed_time is not a valid timestamp', async () => {
+    const repo = new InMemoryLogRepository();
+    const NOW = '2026-06-08T10:00:00.000Z';
+    await executeTool(
+      { id: 's1', name: 'log_sleep', arguments: { wake_time: '07:00', duration_min: 420 } },
+      repo, 'u1', NOW,
+    );
+    expect(repo.rows).toHaveLength(1);
+    expect(repo.rows[0].type).toBe('sleep');
+    expect(repo.rows[0].logged_at).toBe(NOW); // no bed_time -> fallback to now, never NaN/null
+    expect(repo.rows[0].data).toMatchObject({ duration_min: 420 });
+  });
+
+  it('log_sleep uses bed_time when it is a valid ISO timestamp', async () => {
+    const repo = new InMemoryLogRepository();
+    await executeTool(
+      { id: 's2', name: 'log_sleep',
+        arguments: { bed_time: '2026-06-07T23:00:00.000Z', wake_time: '2026-06-08T07:00:00.000Z' } },
+      repo, 'u1', '2026-06-08T10:00:00.000Z',
+    );
+    expect(repo.rows[0].logged_at).toBe('2026-06-07T23:00:00.000Z');
+  });
+
   it('rejects an unknown tool', async () => {
     const repo = new InMemoryLogRepository();
     await expect(
