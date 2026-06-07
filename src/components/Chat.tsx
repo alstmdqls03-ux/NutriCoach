@@ -1,10 +1,10 @@
 'use client';
 import { useState } from 'react';
 
-interface Turn { role: 'user' | 'assistant'; text: string; }
+export interface Turn { role: 'user' | 'assistant'; text: string; }
 
-export default function Chat() {
-  const [turns, setTurns] = useState<Turn[]>([]);
+export default function Chat({ initialTurns = [] }: { initialTurns?: Turn[] }) {
+  const [turns, setTurns] = useState<Turn[]>(initialTurns);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
 
