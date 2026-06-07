@@ -16,6 +16,26 @@ describe('executeTool', () => {
     expect(out).toContain('기록');
   });
 
+  it('log_workout back-dates to occurred_at when the user states a past date', async () => {
+    const repo = new InMemoryLogRepository();
+    await executeTool(
+      { id: 'w2', name: 'log_workout',
+        arguments: { exercise: '스쿼트', weight_kg: 90, reps: 5, sets: 5, occurred_at: '2026-06-05T18:00:00.000Z' } },
+      repo, 'u1', '2026-06-08T10:00:00.000Z',
+    );
+    expect(repo.rows[0].logged_at).toBe('2026-06-05T18:00:00.000Z'); // not "now"
+  });
+
+  it('log_workout falls back to now when occurred_at is absent', async () => {
+    const repo = new InMemoryLogRepository();
+    const NOW = '2026-06-08T10:00:00.000Z';
+    await executeTool(
+      { id: 'w3', name: 'log_workout', arguments: { exercise: '벤치', weight_kg: 60, reps: 8, sets: 3 } },
+      repo, 'u1', NOW,
+    );
+    expect(repo.rows[0].logged_at).toBe(NOW);
+  });
+
   it('query_logs returns the user rows as JSON', async () => {
     const repo = new InMemoryLogRepository();
     await repo.insertLog({ userId: 'u1', type: 'workout',

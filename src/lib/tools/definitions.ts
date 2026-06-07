@@ -16,6 +16,11 @@ export const toolDefinitions: ToolDefinition[] = [
         sets: { type: 'integer', description: '세트 수' },
         rpe: { type: 'number', description: '주관적 강도 1-10 (선택)' },
         pain: { type: 'string', description: '통증 부위/정도 (선택)' },
+        occurred_at: {
+          type: 'string',
+          description:
+            '운동한 시각(ISO 8601). 사용자가 "어제/그저께/특정일"을 말하면 현재 시각 기준으로 계산해 채워라. 오늘이면 비워둠.',
+        },
       },
     },
   },

@@ -10,9 +10,13 @@ export async function executeTool(
   switch (call.name) {
     case 'log_workout': {
       const a = call.arguments as {
-        exercise: string; weight_kg: number; reps: number; sets: number; rpe?: number; pain?: string;
+        exercise: string; weight_kg: number; reps: number; sets: number;
+        rpe?: number; pain?: string; occurred_at?: string;
       };
-      await logs.insertLog({ userId, type: 'workout', data: a, loggedAt: nowIso });
+      // Honor a past date the user stated ("어제/그저께"); else default to now.
+      const occ = Date.parse(a.occurred_at ?? '');
+      const loggedAt = Number.isNaN(occ) ? nowIso : new Date(occ).toISOString();
+      await logs.insertLog({ userId, type: 'workout', data: a, loggedAt });
       return `운동을 기록했어요: ${a.exercise} ${a.weight_kg}kg ${a.reps}회 ${a.sets}세트`;
     }
     case 'log_sleep': {
