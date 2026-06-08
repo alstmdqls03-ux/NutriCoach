@@ -38,3 +38,4 @@ next-env.d.ts
 # worktrees and planning (preserved)
 .worktrees/
 .planning/
+.gstack/
