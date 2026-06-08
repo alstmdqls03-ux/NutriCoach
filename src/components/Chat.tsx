@@ -1,5 +1,6 @@
 'use client';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { supabaseBrowser } from '@/lib/supabase/browser';
 
 export interface Turn { role: 'user' | 'assistant'; text: string; }
 
@@ -7,10 +8,16 @@ export default function Chat({ initialTurns = [] }: { initialTurns?: Turn[] }) {
   const [turns, setTurns] = useState<Turn[]>(initialTurns);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
+  // Synchronous re-entrancy guard. `busy` is React state and its closure value
+  // is stale across two clicks fired in the same tick (rapid double-click),
+  // so both would pass the guard and send twice -> duplicate logs. A ref flips
+  // immediately and is read synchronously, so the second click is dropped.
+  const sendingRef = useRef(false);
 
   async function send() {
     const text = input.trim();
-    if (!text || busy) return;
+    if (!text || sendingRef.current) return;
+    sendingRef.current = true;
     setInput('');
     setTurns((t) => [...t, { role: 'user', text }]);
     setBusy(true);
@@ -27,13 +34,34 @@ export default function Chat({ initialTurns = [] }: { initialTurns?: Turn[] }) {
       setTurns((t) => [...t, { role: 'assistant', text: reply }]);
     } finally {
       setBusy(false);
+      sendingRef.current = false;
+    }
+  }
+
+  async function logout() {
+    try { await supabaseBrowser().auth.signOut(); } finally {
+      window.location.href = '/login';
     }
   }
 
   return (
     <div style={{ maxWidth: 600, margin: '40px auto', fontFamily: 'system-ui' }}>
-      <h2>NutriCoach</h2>
-      <div style={{ minHeight: 300, border: '1px solid #ddd', padding: 12, borderRadius: 8 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h2 style={{ margin: 0 }}>NutriCoach</h2>
+        <button onClick={logout} style={{ fontSize: 13, padding: '4px 10px' }}>로그아웃</button>
+      </div>
+      <div style={{ minHeight: 300, border: '1px solid #ddd', padding: 12, borderRadius: 8, marginTop: 12 }}>
+        {turns.length === 0 && (
+          <div style={{ color: '#666', lineHeight: 1.6 }}>
+            <p style={{ margin: '0 0 8px' }}>안녕하세요! 저는 운동·수면을 기록하고 돌아봐 드리는 건강 코치예요.</p>
+            <p style={{ margin: 0 }}>
+              이렇게 말해보세요:<br />
+              · &quot;오늘 스쿼트 80kg 5회 5세트 했어&quot;<br />
+              · &quot;어제 7시간 잤어&quot;<br />
+              · &quot;이번 주 운동 어땠어?&quot;
+            </p>
+          </div>
+        )}
         {turns.map((t, i) => (
           <p key={i} style={{ textAlign: t.role === 'user' ? 'right' : 'left' }}>
             <b>{t.role === 'user' ? '나' : '코치'}:</b> {t.text}
