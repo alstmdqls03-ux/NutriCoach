@@ -1,11 +1,13 @@
 import type { ToolCall } from '@/lib/llm/types';
 import type { LogRepository } from '@/lib/repositories/types';
+import { resolveDateBound } from './dateRange';
 
 export async function executeTool(
   call: ToolCall,
   logs: LogRepository,
   userId: string,
   nowIso: string,
+  timezone = 'Asia/Seoul',
 ): Promise<string> {
   switch (call.name) {
     case 'log_workout': {
@@ -32,7 +34,12 @@ export async function executeTool(
     }
     case 'query_logs': {
       const a = call.arguments as { type?: 'workout' | 'sleep'; date_from?: string; date_to?: string };
-      const rows = await logs.queryLogs({ userId, type: a.type, from: a.date_from, to: a.date_to });
+      // Expand date-only bounds to the inclusive start/end of that calendar day
+      // in the user's timezone — otherwise "오늘" (date_from=date_to=today)
+      // matches midnight only and silently returns no same-day logs.
+      const from = resolveDateBound(a.date_from, 'start', timezone);
+      const to = resolveDateBound(a.date_to, 'end', timezone);
+      const rows = await logs.queryLogs({ userId, type: a.type, from, to });
       return JSON.stringify(rows);
     }
     default:
