@@ -8,8 +8,21 @@ describe('safety filter', () => {
     expect(detectPainSignal('무릎 삐끗했어')).toBe(true);
   });
 
+  it('detects past-tense and adverb-separated pain (QA p4 gap)', () => {
+    // Past tense 아팠 — the live miss that produced no disclaimer.
+    expect(detectPainSignal('오늘 스쿼트했는데 무릎이 좀 아팠어')).toBe(true);
+    expect(detectPainSignal('어제부터 허리가 아팠다')).toBe(true);
+    // Adnominal / noun forms.
+    expect(detectPainSignal('아픈 곳이 있어')).toBe(true);
+    expect(detectPainSignal('어깨 아픔이 심해')).toBe(true);
+    // Adverb between body part and pain word.
+    expect(detectPainSignal('무릎이 많이 아팠어')).toBe(true);
+  });
+
   it('does not flag normal logging', () => {
     expect(detectPainSignal('벤치 60kg 8회 3세트 했어')).toBe(false);
+    expect(detectPainSignal('오늘 스쿼트 100kg 5회 5세트 했어')).toBe(false);
+    expect(detectPainSignal('이번 주 운동 어땠어?')).toBe(false);
   });
 
   it('appends disclaimer exactly once when pain present', () => {
