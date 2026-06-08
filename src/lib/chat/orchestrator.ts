@@ -47,17 +47,26 @@ export async function runChat(args: RunChatArgs): Promise<RunChatResult> {
   await msgs.insertMessage(userId, { role: 'user', content: userMessage, tool_calls: null });
 
   const ctx = await loadContext(msgs, prof, userId, contextLimit);
+  // Only replay clean user/assistant-text turns. Stored tool rows and
+  // assistant-with-tool_calls rows would create dangling tool messages
+  // (missing tool_call_id linkage) and break the OpenAI API on later turns.
+  const replay = ctx.messages
+    .filter((m) => m.role === 'user' || (m.role === 'assistant' && !m.tool_calls));
+  // The current user message was just persisted above, so it's the LAST user
+  // turn in `replay`. Everything before it is history. Mark historical user
+  // turns as already-recorded context — otherwise the model re-calls log_* for
+  // every past workout/sleep it still sees in the transcript, multiplying logs
+  // on every turn (confirmed in QA: one "런지" message re-logged squat & pullup).
+  const lastUserIdx = replay.map((m) => m.role).lastIndexOf('user');
   const convo: ChatMessage[] = [
     { role: 'system', content: buildSystemPrompt(ctx.summary, now) },
-    ...ctx.messages
-      // Only replay clean user/assistant-text turns. Stored tool rows and
-      // assistant-with-tool_calls rows would create dangling tool messages
-      // (missing tool_call_id linkage) and break the OpenAI API on later turns.
-      .filter((m) => m.role === 'user' || (m.role === 'assistant' && !m.tool_calls))
-      .map((m) => ({
-        role: m.role as ChatMessage['role'],
-        content: m.content,
-      })),
+    ...replay.map((m, i) => ({
+      role: m.role as ChatMessage['role'],
+      content:
+        m.role === 'user' && i !== lastUserIdx
+          ? `[지난 대화 · 이미 기록됨, 다시 기록하지 말 것] ${m.content}`
+          : m.content,
+    })),
   ];
 
   let promptTokens = 0;

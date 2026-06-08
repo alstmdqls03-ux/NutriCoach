@@ -93,7 +93,34 @@ describe('runChat', () => {
     const lastCall = llm.calls[llm.calls.length - 1];
     expect(lastCall.messages.some((m) => m.role === 'tool')).toBe(false);
     expect(lastCall.messages.some((m) => m.role === 'assistant' && m.toolCalls)).toBe(false);
-    // sanity: the earlier user message is still replayed
-    expect(lastCall.messages.some((m) => m.role === 'user' && m.content === '벤치 60 8회 3세트')).toBe(true);
+    // sanity: the earlier user message is still replayed (content preserved)
+    expect(lastCall.messages.some((m) => m.role === 'user' && m.content?.includes('벤치 60 8회 3세트'))).toBe(true);
+  });
+
+  it('marks historical user turns as already-recorded so the model never re-logs them', async () => {
+    const d = deps();
+    const llm = new ScriptedLLMProvider([
+      // turn 1: log a workout, then reply
+      { content: null, usage: { promptTokens: 1, completionTokens: 1 },
+        toolCalls: [{ id: 't1', name: 'log_workout',
+          arguments: { exercise: '스쿼트', weight_kg: 80, reps: 5, sets: 5 } }] },
+      { content: '기록했어요', toolCalls: [], usage: { promptTokens: 1, completionTokens: 1 } },
+      // turn 2: log a different workout, then reply
+      { content: null, usage: { promptTokens: 1, completionTokens: 1 },
+        toolCalls: [{ id: 't2', name: 'log_workout',
+          arguments: { exercise: '런지', reps: 12, sets: 3, weight_kg: 0 } }] },
+      { content: '기록했어요', toolCalls: [], usage: { promptTokens: 1, completionTokens: 1 } },
+    ]);
+    const base = { logs: d.logs, msgs: d.msgs, prof: d.prof, now: NOW, maxToolRounds: 2, contextLimit: 20 };
+    await runChat({ userId: 'u1', userMessage: '오늘 스쿼트 80kg 5회 5세트 했어', llm, ...base });
+    await runChat({ userId: 'u1', userMessage: '오늘 런지 12회 3세트 했어', llm, ...base });
+
+    const turn2 = llm.calls[llm.calls.length - 1].messages;
+    const userTurns = turn2.filter((m) => m.role === 'user');
+    // The prior workout message must be marked as already-recorded context...
+    expect(userTurns.some((m) => m.content?.startsWith('[지난 대화') && m.content.includes('스쿼트'))).toBe(true);
+    // ...while the current message stays a clean, unmarked instruction.
+    expect(userTurns.some((m) => m.content === '오늘 런지 12회 3세트 했어')).toBe(true);
+    expect(userTurns.some((m) => m.content === '오늘 스쿼트 80kg 5회 5세트 했어')).toBe(false);
   });
 });
