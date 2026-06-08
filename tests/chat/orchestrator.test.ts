@@ -97,6 +97,36 @@ describe('runChat', () => {
     expect(lastCall.messages.some((m) => m.role === 'user' && m.content?.includes('벤치 60 8회 3세트'))).toBe(true);
   });
 
+  it('collapses duplicate tool calls in one turn so a model stutter logs once', async () => {
+    const d = deps();
+    // gpt-4o-mini sometimes returns the SAME log call twice in a single
+    // assistant turn (identical args, different ids). Confirmed live: one sleep
+    // statement -> 2 identical sleep rows. The orchestrator must execute it once.
+    const llm = new ScriptedLLMProvider([
+      { content: null, usage: { promptTokens: 1, completionTokens: 1 },
+        toolCalls: [
+          { id: 'a1', name: 'log_sleep',
+            arguments: { bed_time: '2026-06-07T23:00:00+09:00', wake_time: '2026-06-08T07:00:00+09:00' } },
+          { id: 'a2', name: 'log_sleep',
+            arguments: { bed_time: '2026-06-07T23:00:00+09:00', wake_time: '2026-06-08T07:00:00+09:00' } },
+        ] },
+      { content: '수면 기록했어요', toolCalls: [], usage: { promptTokens: 1, completionTokens: 1 } },
+    ]);
+    const res = await runChat({
+      userId: 'u1', userMessage: '어제 밤 11시에 자서 오늘 아침 7시에 일어났어', llm,
+      logs: d.logs, msgs: d.msgs, prof: d.prof, now: NOW, maxToolRounds: 2, contextLimit: 20,
+    });
+    // Exactly one row despite the duplicated call.
+    expect(d.logs.rows).toHaveLength(1);
+    expect(res.reply).toContain('기록');
+    // The persisted assistant(tool_calls) row carries one call, and there is
+    // exactly one tool-result row — no dangling tool_call_id.
+    const stored = d.msgs.rows.filter((m) => m.role === 'assistant' && m.tool_calls);
+    expect(stored).toHaveLength(1);
+    expect(stored[0].tool_calls).toHaveLength(1);
+    expect(d.msgs.rows.filter((m) => m.role === 'tool')).toHaveLength(1);
+  });
+
   it('marks historical user turns as already-recorded so the model never re-logs them', async () => {
     const d = deps();
     const llm = new ScriptedLLMProvider([

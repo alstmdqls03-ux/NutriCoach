@@ -1,5 +1,5 @@
 import type {
-  ChatMessage, LLMProvider, ToolDefinition, LLMResponse,
+  ChatMessage, LLMProvider, ToolDefinition, LLMResponse, ToolCall,
 } from '@/lib/llm/types';
 import type { LogRepository, MessageRepository, ProfileRepository } from '@/lib/repositories/types';
 import { toolDefinitions } from '@/lib/tools/definitions';
@@ -74,14 +74,42 @@ export async function runChat(args: RunChatArgs): Promise<RunChatResult> {
   let finalText = '';
   let toolRounds = 0;
 
-  // Execute one assistant turn's tool calls: persist the assistant(tool_calls)
-  // row, run each tool (user-scoped), then persist + replay each tool result.
+  // gpt-4o-mini sometimes emits the SAME tool call more than once — twice in a
+  // single assistant turn, or again on a later round — with identical
+  // name+arguments. Executing each copy inserts a duplicate row (confirmed in QA:
+  // "어제 밤 11시에 자서 오늘 아침 7시에 일어났어" produced 2 identical sleep logs).
+  // Track which calls already ran this user-turn and drop exact repeats so the
+  // model's stutter can never multiply the user's data.
+  const executedToolKeys = new Set<string>();
+  const toolKey = (c: ToolCall): string => {
+    const args = c.arguments ?? {};
+    const stable = Object.keys(args).sort().reduce(
+      (o, k) => { o[k] = args[k]; return o; },
+      {} as Record<string, unknown>,
+    );
+    return `${c.name}:${JSON.stringify(stable)}`;
+  };
+
+  // Execute one assistant turn's tool calls: drop exact-duplicate calls, persist
+  // the assistant(tool_calls) row, run each tool (user-scoped), then persist +
+  // replay each tool result. Deduping before persisting keeps the assistant
+  // message, its tool results, and the DB consistent (one call -> one result ->
+  // one row) and avoids dangling tool_call_ids on the next round.
   async function runToolCalls(res: LLMResponse): Promise<void> {
-    await msgs.insertMessage(userId, {
-      role: 'assistant', content: res.content, tool_calls: res.toolCalls,
+    const calls = res.toolCalls.filter((c) => {
+      const key = toolKey(c);
+      if (executedToolKeys.has(key)) return false;
+      executedToolKeys.add(key);
+      return true;
     });
-    convo.push({ role: 'assistant', content: res.content, toolCalls: res.toolCalls });
-    for (const call of res.toolCalls) {
+    // Whole turn was a stutter (every call already ran this turn) — persist
+    // nothing so we don't leave an assistant message with no tool results.
+    if (calls.length === 0) return;
+    await msgs.insertMessage(userId, {
+      role: 'assistant', content: res.content, tool_calls: calls,
+    });
+    convo.push({ role: 'assistant', content: res.content, toolCalls: calls });
+    for (const call of calls) {
       let toolOut: string;
       try {
         toolOut = await executeTool(call, logs, userId, now);
