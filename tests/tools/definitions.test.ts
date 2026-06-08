@@ -14,4 +14,13 @@ describe('toolDefinitions', () => {
     expect(Object.keys(params.properties)).toContain('rpe');
     expect(Object.keys(params.properties)).toContain('pain');
   });
+
+  it('log_sleep requires nothing so duration-only ("7시간 잤어") can save', () => {
+    const def = toolDefinitions.find((t) => t.name === 'log_sleep')!;
+    const params = def.parameters as { required: string[]; properties: Record<string, unknown> };
+    // bed_time/wake_time must NOT be required, else the model asks back or
+    // fabricates times when only a total duration is given.
+    expect(params.required).toEqual([]);
+    expect(Object.keys(params.properties)).toContain('duration_min');
+  });
 });

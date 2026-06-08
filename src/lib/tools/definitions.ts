@@ -26,15 +26,23 @@ export const toolDefinitions: ToolDefinition[] = [
   },
   {
     name: 'log_sleep',
-    description: '수면 기록. 취침/기상 시각이 불명확하면 되물어라.',
+    description:
+      '수면 기록. 총 수면시간만 알아도(예: "7시간 잤어") 기록하라. 시각을 모른다고 되묻지 마라.',
     parameters: {
       type: 'object',
       additionalProperties: false,
-      required: ['bed_time', 'wake_time'],
+      // Nothing is strictly required: "7시간 잤어" (duration only) must save
+      // without asking back. Provide whatever the user actually stated.
+      required: [],
       properties: {
-        bed_time: { type: 'string', description: '취침 시각 ISO 8601' },
-        wake_time: { type: 'string', description: '기상 시각 ISO 8601' },
-        duration_min: { type: 'integer', description: '총 수면 분 (선택)' },
+        bed_time: {
+          type: 'string',
+          description:
+            '취침 시각 ISO 8601. 시각을 모르면 비우되, 사용자가 날짜(어제·6월 4일 등)를 말했으면 ' +
+            '그 날짜 기준으로 채워 logged_at이 올바른 날에 들어가게 하라.',
+        },
+        wake_time: { type: 'string', description: '기상 시각 ISO 8601 (선택)' },
+        duration_min: { type: 'integer', description: '총 수면 분. 총 시간만 말하면 여기에 채워라.' },
         satisfaction: { type: 'integer', description: '수면 만족도 1-5 (선택)' },
       },
     },

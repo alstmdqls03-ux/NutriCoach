@@ -1,5 +1,37 @@
 import { describe, it, expect } from 'vitest';
-import { resolveDateBound } from '@/lib/tools/dateRange';
+import { resolveDateBound, zonedToday, addDays } from '@/lib/tools/dateRange';
+
+describe('zonedToday', () => {
+  it('returns the local date and weekday for an instant in Asia/Seoul', () => {
+    // 2026-06-08T05:00:00Z === 14:00 KST on Mon 2026-06-08
+    expect(zonedToday('2026-06-08T05:00:00.000Z', 'Asia/Seoul'))
+      .toEqual({ date: '2026-06-08', weekday: 1 }); // Monday
+  });
+
+  it('rolls to the next local day when UTC instant is the previous evening', () => {
+    // 2026-06-07T16:00:00Z === 2026-06-08 01:00 KST → still Monday the 8th
+    expect(zonedToday('2026-06-07T16:00:00.000Z', 'Asia/Seoul'))
+      .toEqual({ date: '2026-06-08', weekday: 1 });
+  });
+});
+
+describe('addDays', () => {
+  it('adds and subtracts days across month boundaries', () => {
+    expect(addDays('2026-06-08', -1)).toBe('2026-06-07');
+    expect(addDays('2026-06-08', -7)).toBe('2026-06-01');
+    expect(addDays('2026-06-08', 6)).toBe('2026-06-14');
+    expect(addDays('2026-06-01', -1)).toBe('2026-05-31'); // month rollover
+  });
+
+  it('computes this-week (Mon) and last-week from a Monday correctly', () => {
+    const { date, weekday } = zonedToday('2026-06-08T05:00:00.000Z', 'Asia/Seoul');
+    const mon = addDays(date, -(weekday - 1));
+    expect(mon).toBe('2026-06-08');            // Monday = today
+    expect(addDays(mon, 6)).toBe('2026-06-14'); // Sunday
+    expect(addDays(mon, -7)).toBe('2026-06-01'); // last Monday
+    expect(addDays(mon, -1)).toBe('2026-06-07'); // last Sunday
+  });
+});
 
 describe('resolveDateBound', () => {
   it('expands a date-only start bound to 00:00 of that day in Asia/Seoul (UTC)', () => {

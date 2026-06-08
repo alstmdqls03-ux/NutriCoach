@@ -49,6 +49,34 @@ function wallTimeToUtc(
 }
 
 /**
+ * The local calendar date (YYYY-MM-DD) and ISO weekday (1=Mon … 7=Sun) for an
+ * instant in `tz`. gpt-4o-mini cannot reliably compute weekday/week boundaries,
+ * so we compute them in code and inject the result into the system prompt.
+ */
+export function zonedToday(
+  nowIso: string,
+  tz: string = DEFAULT_TZ,
+): { date: string; weekday: number } {
+  const dtf = new Intl.DateTimeFormat('en-CA', {
+    timeZone: tz, weekday: 'short',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  });
+  const p: Record<string, string> = {};
+  for (const part of dtf.formatToParts(new Date(nowIso))) p[part.type] = part.value;
+  const date = `${p.year}-${p.month}-${p.day}`;
+  const wk: Record<string, number> = { Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 };
+  return { date, weekday: wk[p.weekday] ?? 1 };
+}
+
+/** Add (or subtract) whole days to a YYYY-MM-DD string, returning YYYY-MM-DD. */
+export function addDays(dateStr: string, n: number): string {
+  const [y, mo, d] = dateStr.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, mo - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + n);
+  return dt.toISOString().slice(0, 10);
+}
+
+/**
  * Resolve a query date bound to an inclusive UTC ISO string.
  * - undefined -> undefined (no bound).
  * - "YYYY-MM-DD" -> start (00:00:00.000) or end (23:59:59.999) of that day in `tz`.

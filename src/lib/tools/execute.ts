@@ -25,12 +25,25 @@ export async function executeTool(
       const a = call.arguments as {
         bed_time?: string; wake_time?: string; duration_min?: number; satisfaction?: number;
       };
-      // logged_at is timestamptz NOT NULL. bed_time may be missing, time-only,
-      // or a relative phrase — fall back to now so the sleep is never dropped.
+      // logged_at is timestamptz NOT NULL. bed_time may be missing (duration-only
+      // sleep like "7시간 잤어"), time-only, or a relative phrase — fall back to
+      // now so the sleep is never dropped.
       const parsed = Date.parse(a.bed_time ?? '');
       const loggedAt = Number.isNaN(parsed) ? nowIso : new Date(parsed).toISOString();
       await logs.insertLog({ userId, type: 'sleep', data: a, loggedAt });
-      return `수면을 기록했어요: ${a.bed_time ?? '시간 미상'} ~ ${a.wake_time ?? '시간 미상'}`;
+      // Confirm with whatever the user actually gave: a bed~wake range, or just
+      // a total duration, never "시간 미상 ~ 시간 미상".
+      let detail: string;
+      if (a.bed_time && a.wake_time) {
+        detail = `${a.bed_time} ~ ${a.wake_time}`;
+      } else if (typeof a.duration_min === 'number') {
+        const h = Math.floor(a.duration_min / 60);
+        const m = a.duration_min % 60;
+        detail = m ? `약 ${h}시간 ${m}분` : `약 ${h}시간`;
+      } else {
+        detail = a.bed_time ?? a.wake_time ?? '시간 정보 없음';
+      }
+      return `수면을 기록했어요: ${detail}`;
     }
     case 'query_logs': {
       const a = call.arguments as { type?: 'workout' | 'sleep'; date_from?: string; date_to?: string };

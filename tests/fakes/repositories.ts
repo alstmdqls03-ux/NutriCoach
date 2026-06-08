@@ -40,7 +40,9 @@ export class InMemoryMessageRepository implements MessageRepository {
 }
 
 function strip(r: StoredMessage & { userId: string }): StoredMessage {
-  const { userId, ...rest } = r; return rest;
+  const rest = { ...r } as Partial<StoredMessage & { userId: string }>;
+  delete rest.userId;
+  return rest as StoredMessage;
 }
 
 export class FakeProfileRepository implements ProfileRepository {
