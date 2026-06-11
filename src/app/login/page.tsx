@@ -64,6 +64,9 @@ export default function LoginPage() {
       </button>
       <button onClick={() => handle('signup')} disabled={busy}>회원가입</button>
       {msg && <p style={{ color: msg.startsWith('가입 완료') ? 'green' : 'crimson' }}>{msg}</p>}
+      <p style={{ marginTop: 12 }}>
+        <a href="/reset" style={{ fontSize: 13, color: '#0070f3' }}>비밀번호를 잊으셨나요?</a>
+      </p>
     </main>
   );
 }
