@@ -21,19 +21,19 @@ export async function POST(req: Request) {
 
   const logs = supabaseLogRepository(sb);
 
+  // Validation errors (bad/empty input) must surface as 400 with the specific
+  // Korean message so the UI can show it — kept separate from the 500 DB path.
+  let built: { type: 'workout' | 'sleep'; data: Record<string, unknown> };
   try {
-    if (type === 'workout') {
-      const logType = 'workout' as const;
-      const payload = buildWorkoutData(body?.data as WorkoutInput);
-      await logs.insertLog({ userId: user.id, type: logType, data: payload, loggedAt });
-    } else if (type === 'sleep') {
-      const logType = 'sleep' as const;
-      const payload = buildSleepData(body?.data as SleepInput);
-      await logs.insertLog({ userId: user.id, type: logType, data: payload, loggedAt });
-    } else {
-      return NextResponse.json({ error: 'type must be workout|sleep' }, { status: 400 });
-    }
+    if (type === 'workout') built = { type: 'workout', data: buildWorkoutData(body?.data as WorkoutInput) };
+    else if (type === 'sleep') built = { type: 'sleep', data: buildSleepData(body?.data as SleepInput) };
+    else return NextResponse.json({ error: 'type must be workout|sleep' }, { status: 400 });
+  } catch (e) {
+    return NextResponse.json({ error: (e as Error).message }, { status: 400 });
+  }
 
+  try {
+    await logs.insertLog({ userId: user.id, type: built.type, data: built.data, loggedAt });
     const since = new Date(Date.parse(loggedAt) - SIXTY_DAYS_MS).toISOString();
     const recent = await logs.queryLogs({ userId: user.id, from: since });
     const insight = computeStreakInsight(recent, loggedAt);
