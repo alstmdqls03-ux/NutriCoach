@@ -41,7 +41,7 @@ export function summarizeExercises(rows: LogRow[]): ExercisePrefill[] {
       count: 1,
     });
   }
-  return [...byKey.values()];
+  return Array.from(byKey.values());
 }
 
 export interface WorkoutEntry { exercise: string; weight_kg: number; reps: number; sets: number; }
