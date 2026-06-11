@@ -17,6 +17,12 @@ export class InMemoryLogRepository implements LogRepository {
       .filter((r) => !i.to || r.logged_at <= i.to)
       .map(({ id, type, data, logged_at }) => ({ id, type, data, logged_at }));
   }
+  async deleteLastLog(userId: string): Promise<boolean> {
+    for (let idx = this.rows.length - 1; idx >= 0; idx--) {
+      if (this.rows[idx].userId === userId) { this.rows.splice(idx, 1); return true; }
+    }
+    return false;
+  }
 }
 
 export class InMemoryMessageRepository implements MessageRepository {

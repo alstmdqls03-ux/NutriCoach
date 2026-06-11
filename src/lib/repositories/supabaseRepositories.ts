@@ -23,6 +23,17 @@ export function supabaseLogRepository(sb: SupabaseClient): LogRepository {
       if (error) throw new Error(`queryLogs failed: ${error.message}`);
       return (data ?? []) as LogRow[];
     },
+    async deleteLastLog(userId: string): Promise<boolean> {
+      // Most recently *created* row (created_at), per the design's "마지막" rule.
+      const { data, error } = await sb.from('logs')
+        .select('id').eq('user_id', userId)
+        .order('created_at', { ascending: false }).limit(1).maybeSingle();
+      if (error) throw new Error(`deleteLastLog read failed: ${error.message}`);
+      if (!data) return false;
+      const del = await sb.from('logs').delete().eq('user_id', userId).eq('id', data.id);
+      if (del.error) throw new Error(`deleteLastLog failed: ${del.error.message}`);
+      return true;
+    },
   };
 }
 

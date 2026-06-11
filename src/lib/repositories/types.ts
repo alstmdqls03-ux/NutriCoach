@@ -22,6 +22,7 @@ export interface QueryLogInput {
 export interface LogRepository {
   insertLog(input: InsertLogInput): Promise<void>;
   queryLogs(input: QueryLogInput): Promise<LogRow[]>;
+  deleteLastLog(userId: string): Promise<boolean>;
 }
 
 export interface StoredMessage {
