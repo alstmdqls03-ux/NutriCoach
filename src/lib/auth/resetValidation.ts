@@ -16,6 +16,6 @@ export function validateNewPassword(pw: string): string | null {
 }
 
 export function validateCode(code: string): string | null {
-  if (!/^\d{6}$/.test(code.trim())) return '6자리 코드를 정확히 입력해주세요.';
+  if (!/^\d{6,8}$/.test(code.trim())) return '코드를 정확히 입력해주세요.';
   return null;
 }

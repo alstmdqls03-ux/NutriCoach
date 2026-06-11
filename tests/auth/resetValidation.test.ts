@@ -14,9 +14,10 @@ describe('resetValidation', () => {
     expect(validateNewPassword('1234567')).toMatch(/8자/);
   });
 
-  it('validateCode: requires exactly 6 digits', () => {
+  it('validateCode: accepts 6-8 digits, rejects others', () => {
     expect(validateCode('123456')).toBeNull();
-    expect(validateCode('12345')).toMatch(/6자리/);
-    expect(validateCode('abcdef')).toMatch(/6자리/);
+    expect(validateCode('12345678')).toBeNull();
+    expect(validateCode('12345')).toMatch(/코드/);
+    expect(validateCode('abcdef')).toMatch(/코드/);
   });
 });
