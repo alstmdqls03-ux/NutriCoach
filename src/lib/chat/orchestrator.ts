@@ -34,6 +34,8 @@ export interface RunChatArgs {
   now: string;          // ISO timestamp for this turn
   maxToolRounds: number;
   contextLimit: number;
+  tools?: ToolDefinition[];   // defaults to the full set (back-compat with tests)
+  promptMode?: 'full' | 'coach';   // 'coach' = query/advice only, never claims to log
 }
 
 export interface RunChatResult {
@@ -42,7 +44,8 @@ export interface RunChatResult {
 }
 
 export async function runChat(args: RunChatArgs): Promise<RunChatResult> {
-  const { userId, userMessage, llm, logs, msgs, prof, now, maxToolRounds, contextLimit } = args;
+  const { userId, userMessage, llm, logs, msgs, prof, now, maxToolRounds, contextLimit,
+    tools = toolDefinitions, promptMode = 'full' } = args;
 
   await msgs.insertMessage(userId, { role: 'user', content: userMessage, tool_calls: null });
 
@@ -59,7 +62,7 @@ export async function runChat(args: RunChatArgs): Promise<RunChatResult> {
   // on every turn (confirmed in QA: one "런지" message re-logged squat & pullup).
   const lastUserIdx = replay.map((m) => m.role).lastIndexOf('user');
   const convo: ChatMessage[] = [
-    { role: 'system', content: buildSystemPrompt(ctx.summary, now) },
+    { role: 'system', content: buildSystemPrompt(ctx.summary, now, undefined, promptMode) },
     ...replay.map((m, i) => ({
       role: m.role as ChatMessage['role'],
       content:
@@ -122,7 +125,7 @@ export async function runChat(args: RunChatArgs): Promise<RunChatResult> {
   }
 
   while (true) {
-    const res = await chatWithRetry(llm, convo, toolDefinitions);
+    const res = await chatWithRetry(llm, convo, tools);
     promptTokens += res.usage.promptTokens;
     completionTokens += res.usage.completionTokens;
 

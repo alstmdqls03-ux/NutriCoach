@@ -53,12 +53,12 @@ export default function Chat({ initialTurns = [] }: { initialTurns?: Turn[] }) {
       <div style={{ minHeight: 300, border: '1px solid #ddd', padding: 12, borderRadius: 8, marginTop: 12 }}>
         {turns.length === 0 && (
           <div style={{ color: '#666', lineHeight: 1.6 }}>
-            <p style={{ margin: '0 0 8px' }}>안녕하세요! 저는 운동·수면을 기록하고 돌아봐 드리는 건강 코치예요.</p>
+            <p style={{ margin: '0 0 8px' }}>기록을 돌아보고 코칭해드려요. 기록은 &apos;기록&apos; 탭에서 해주세요.</p>
             <p style={{ margin: 0 }}>
-              이렇게 말해보세요:<br />
-              · &quot;오늘 스쿼트 80kg 5회 5세트 했어&quot;<br />
-              · &quot;어제 7시간 잤어&quot;<br />
-              · &quot;이번 주 운동 어땠어?&quot;
+              이렇게 물어보세요:<br />
+              · &quot;이번 주 운동 어땠어?&quot;<br />
+              · &quot;요즘 수면 어때?&quot;<br />
+              · &quot;다음 운동 추천해줘&quot;
             </p>
           </div>
         )}
@@ -73,7 +73,7 @@ export default function Chat({ initialTurns = [] }: { initialTurns?: Turn[] }) {
         <input value={input} onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && send()}
           aria-label="메시지 입력"
-          placeholder="예: 벤치 60kg 8회 3세트 했어"
+          placeholder="예: 이번 주 운동 어땠어?"
           style={{ flex: 1, padding: 8 }} />
         <button onClick={send} disabled={busy}>보내기</button>
       </div>
