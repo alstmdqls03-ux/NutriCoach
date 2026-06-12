@@ -31,6 +31,7 @@ export async function POST(req: Request) {
       maxToolRounds: Number(process.env.LLM_MAX_TOOL_ROUNDS ?? 2),
       contextLimit: Number(process.env.CONTEXT_MESSAGE_LIMIT ?? 20),
       tools: coachToolDefinitions,
+      promptMode: 'coach',
     });
     // Token usage logged for the price-hypothesis (see Task 13).
     console.log(JSON.stringify({ evt: 'chat_usage', userId: user.id, ...result.usage }));

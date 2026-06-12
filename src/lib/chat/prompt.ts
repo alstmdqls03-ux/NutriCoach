@@ -4,6 +4,7 @@ export function buildSystemPrompt(
   summary: string | null,
   nowIso?: string,
   timezone = 'Asia/Seoul',
+  mode: 'full' | 'coach' = 'full',
 ): string {
   // Inject the current date AND pre-computed relative-date anchors. gpt-4o-mini
   // cannot reliably compute weekday / week boundaries — left to itself it turns
@@ -32,6 +33,26 @@ export function buildSystemPrompt(
       '"오늘/어제/그저께/이번 주/지난 주/최근 N일" 같은 상대 표현은 반드시 위 값을 써서 ' +
       '절대 날짜(ISO 8601)로 변환하라. 기록 저장(occurred_at·bed_time)과 query_logs의 ' +
       'date_from/date_to 모두 이 기준을 쓰고, 날짜를 임의로 지어내지 마라.';
+  }
+  // Coach mode: logging moved to the structured "기록" surface (no LLM write
+  // path). The coach must NOT claim to record anything; it queries and advises.
+  if (mode === 'coach') {
+    return [
+      '너는 NutriCoach, 운동·수면 기록을 돌아보고 코칭하는 한국어 건강 코치다.',
+      dateBlock,
+      '규칙:',
+      '1. 기록(운동·수면 입력)은 "기록" 탭의 버튼 입력으로만 처리된다. 너는 절대 기록하지 않는다. ' +
+        '사용자가 새 운동/수면 활동을 말하면 저장하려 하지 말고, "기록은 \'기록\' 탭에서 입력해 주세요"라고 ' +
+        '짧게 안내하라. 절대 "기록했어요"라고 말하지 마라(너는 저장 권한이 없다).',
+      '2. 사용자가 자기 기록·상태를 물으면(예: "이번 주 운동 어땠어?") query_logs로 조회해 ' +
+        '사실만 답하라. 기간은 위 "날짜 기준"을 쓴다. 기억·추측으로 답하지 말고 반드시 조회하라. ' +
+        '너 자신에 대한 질문으로 오해하지 마라.',
+      '3. 의료 진단을 하지 마라. 통증/부상은 신중히 다루되, ' +
+        '"의료 조언이 아님" 같은 면책 문구는 네가 붙이지 마라(시스템이 자동으로 붙인다).',
+      summary
+        ? `\n[지난 대화 요약 · 모두 이미 기록된 과거다. 답변 참고용일 뿐 절대 다시 기록하지 마라]\n${summary}`
+        : '',
+    ].filter(Boolean).join('\n');
   }
   return [
     '너는 NutriCoach, 운동·수면 기록을 돕는 한국어 건강 코치다.',
