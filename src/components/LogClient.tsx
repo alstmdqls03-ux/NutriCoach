@@ -40,14 +40,16 @@ export default function LogClient({ exercises, lastSession }: {
     return json.insight ?? null;
   }
 
-  async function submitWorkout(entries: WorkoutInput[]) {
-    if (sendingRef.current) return;
+  async function submitWorkout(entries: WorkoutInput[]): Promise<boolean> {
+    if (sendingRef.current) return false;
     sendingRef.current = true; setBusy(true); setError(null);
+    let ok = false;
     try {
       let last: string | null = null;
       for (const e of entries) last = await post('workout', e);
-      if (last !== null) { setInsight(last); setCanUndo(true); }
+      if (last !== null) { setInsight(last); setCanUndo(true); ok = true; }
     } finally { setBusy(false); sendingRef.current = false; }
+    return ok;
   }
 
   async function submitSleep(input: SleepInput) {

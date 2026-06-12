@@ -6,7 +6,7 @@ import type { ExercisePrefill, WorkoutEntry } from '@/lib/log/history';
 export default function WorkoutLog({ exercises, lastSession, onSubmit, busy }: {
   exercises: ExercisePrefill[];
   lastSession: WorkoutEntry[];
-  onSubmit: (entries: WorkoutInput[]) => void;
+  onSubmit: (entries: WorkoutInput[]) => Promise<boolean>;
   busy: boolean;
 }) {
   const [entries, setEntries] = useState<WorkoutInput[]>([]);
@@ -63,7 +63,7 @@ export default function WorkoutLog({ exercises, lastSession, onSubmit, busy }: {
       ))}
 
       <button type="button" disabled={busy || entries.length === 0}
-        onClick={() => onSubmit(entries)}
+        onClick={async () => { if (await onSubmit(entries)) setEntries([]); }}
         style={primaryBtn(busy || entries.length === 0)}>
         운동 기록 ({entries.length})
       </button>
