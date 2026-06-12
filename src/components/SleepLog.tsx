@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import type { SleepInput } from '@/lib/log/payload';
+import { SLEEP_TAGS, type SleepInput } from '@/lib/log/payload';
 
 const DURATIONS = [5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9];
 const QUALITIES: SleepInput['quality'][] = ['좋음', '보통', '나쁨'];
@@ -11,6 +11,15 @@ export default function SleepLog({ onSubmit, busy }: {
 }) {
   const [hours, setHours] = useState(7);
   const [quality, setQuality] = useState<SleepInput['quality']>('보통');
+  const [tags, setTags] = useState<Set<string>>(new Set());
+
+  function toggleTag(t: string) {
+    setTags((cur) => {
+      const next = new Set(cur);
+      if (next.has(t)) next.delete(t); else next.add(t);
+      return next;
+    });
+  }
 
   return (
     <section style={{ border: '1px solid #eee', borderRadius: 12, padding: 16, marginBottom: 16 }}>
@@ -30,8 +39,19 @@ export default function SleepLog({ onSubmit, busy }: {
         ))}
       </div>
 
+      <p style={{ margin: '0 0 6px', fontSize: 13, color: '#666' }}>수면에 영향 (선택)</p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
+        {SLEEP_TAGS.map((t) => (
+          <button key={t} onClick={() => toggleTag(t)} type="button"
+            style={chip(tags.has(t))}>{t}</button>
+        ))}
+      </div>
+
       <button type="button" disabled={busy}
-        onClick={() => onSubmit({ durationHours: hours, quality })}
+        onClick={() => onSubmit({
+          durationHours: hours, quality,
+          ...(tags.size > 0 ? { tags: Array.from(tags) } : {}),
+        })}
         style={primaryBtn(busy)}>
         수면 기록
       </button>
