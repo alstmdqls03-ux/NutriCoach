@@ -4,7 +4,12 @@ export interface SleepInput {
   quality?: '좋음' | '보통' | '나쁨';
   bed_time?: string;
   wake_time?: string;
+  tags?: string[];
 }
+
+// Locked v1 context-factor chips (sleep). Allowlist enforced in code so the
+// stored jsonb stays aggregatable — unknown values are dropped, never saved.
+export const SLEEP_TAGS = ['카페인', '음주', '늦은 운동', '스트레스', '낮잠', '야식'] as const;
 
 /** Trim + collapse internal whitespace. The display/canonical form. */
 export function normalizeExercise(name: string): string {
@@ -40,6 +45,11 @@ export function buildSleepData(i: SleepInput): Record<string, unknown> {
   if (i.wake_time) data.wake_time = i.wake_time;
   if (i.quality && QUALITY_TO_SATISFACTION[i.quality]) {
     data.satisfaction = QUALITY_TO_SATISFACTION[i.quality];
+  }
+  if (Array.isArray(i.tags)) {
+    const allowed = (SLEEP_TAGS as readonly string[]);
+    const tags = Array.from(new Set(i.tags.filter((t) => allowed.includes(t))));
+    if (tags.length > 0) data.tags = tags;
   }
   if (data.duration_min === undefined && !data.bed_time && !data.wake_time) {
     throw new Error('수면 시간을 입력해주세요.');

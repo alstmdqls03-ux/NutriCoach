@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  normalizeExercise, exerciseKey, buildWorkoutData, buildSleepData,
+  normalizeExercise, exerciseKey, buildWorkoutData, buildSleepData, SLEEP_TAGS,
 } from '@/lib/log/payload';
 
 describe('payload builders', () => {
@@ -31,5 +31,20 @@ describe('payload builders', () => {
     expect(() => buildSleepData({})).toThrow();
     expect(() => buildSleepData({ durationHours: 0 })).toThrow();
     expect(() => buildSleepData({ durationHours: 25 })).toThrow();
+  });
+
+  it('keeps only allowlisted sleep tags and dedupes', () => {
+    expect(buildSleepData({ durationHours: 7, tags: ['카페인', '카페인', '음주', '외계인'] }))
+      .toEqual({ duration_min: 420, tags: ['카페인', '음주'] });
+  });
+
+  it('omits the tags key when empty or all-unknown', () => {
+    expect(buildSleepData({ durationHours: 7, tags: [] })).toEqual({ duration_min: 420 });
+    expect(buildSleepData({ durationHours: 7, tags: ['외계인'] })).toEqual({ duration_min: 420 });
+    expect(buildSleepData({ durationHours: 7 })).toEqual({ duration_min: 420 });
+  });
+
+  it('exposes the locked v1 allowlist', () => {
+    expect(SLEEP_TAGS).toEqual(['카페인', '음주', '늦은 운동', '스트레스', '낮잠', '야식']);
   });
 });
