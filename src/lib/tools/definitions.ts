@@ -62,3 +62,9 @@ export const toolDefinitions: ToolDefinition[] = [
     },
   },
 ];
+
+// The Coach surface is query/advice only — logging moved to the structured Log
+// surface (POST /api/log, no LLM). Exposing only query_logs guarantees the LLM
+// has no write path (design: "Chat-logging is REMOVED in this build").
+export const coachToolDefinitions: ToolDefinition[] =
+  toolDefinitions.filter((t) => t.name === 'query_logs');

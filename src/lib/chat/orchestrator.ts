@@ -34,6 +34,7 @@ export interface RunChatArgs {
   now: string;          // ISO timestamp for this turn
   maxToolRounds: number;
   contextLimit: number;
+  tools?: ToolDefinition[];   // defaults to the full set (back-compat with tests)
 }
 
 export interface RunChatResult {
@@ -42,7 +43,8 @@ export interface RunChatResult {
 }
 
 export async function runChat(args: RunChatArgs): Promise<RunChatResult> {
-  const { userId, userMessage, llm, logs, msgs, prof, now, maxToolRounds, contextLimit } = args;
+  const { userId, userMessage, llm, logs, msgs, prof, now, maxToolRounds, contextLimit,
+    tools = toolDefinitions } = args;
 
   await msgs.insertMessage(userId, { role: 'user', content: userMessage, tool_calls: null });
 
@@ -122,7 +124,7 @@ export async function runChat(args: RunChatArgs): Promise<RunChatResult> {
   }
 
   while (true) {
-    const res = await chatWithRetry(llm, convo, toolDefinitions);
+    const res = await chatWithRetry(llm, convo, tools);
     promptTokens += res.usage.promptTokens;
     completionTokens += res.usage.completionTokens;
 

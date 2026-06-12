@@ -5,6 +5,7 @@ import {
 } from '@/lib/repositories/supabaseRepositories';
 import { getLLM } from '@/lib/llm';
 import { runChat } from '@/lib/chat/orchestrator';
+import { coachToolDefinitions } from '@/lib/tools/definitions';
 
 export async function POST(req: Request) {
   const sb = await supabaseServer();
@@ -29,6 +30,7 @@ export async function POST(req: Request) {
       now: new Date().toISOString(),
       maxToolRounds: Number(process.env.LLM_MAX_TOOL_ROUNDS ?? 2),
       contextLimit: Number(process.env.CONTEXT_MESSAGE_LIMIT ?? 20),
+      tools: coachToolDefinitions,
     });
     // Token usage logged for the price-hypothesis (see Task 13).
     console.log(JSON.stringify({ evt: 'chat_usage', userId: user.id, ...result.usage }));
