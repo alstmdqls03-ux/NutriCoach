@@ -103,6 +103,10 @@ export function supabaseProfileRepository(sb: SupabaseClient): ProfileRepository
         .update({ gym_machines: machines }).eq('id', userId);
       if (error) throw new Error(`setGymMachines failed: ${error.message}`);
     },
+    async setOnboarding(userId, data) {
+      const { error } = await sb.from('profiles').update(data).eq('id', userId);
+      if (error) throw new Error(`setOnboarding failed: ${error.message}`);
+    },
   };
 }
 

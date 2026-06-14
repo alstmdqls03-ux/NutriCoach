@@ -58,4 +58,6 @@ export class FakeProfileRepository implements ProfileRepository {
   async setRollingSummary(userId: string, s: string) { this.summaries.set(userId, s); }
   async getGymMachines(userId: string) { return this.gym.get(userId) ?? []; }
   async setGymMachines(userId: string, machines: string[]) { this.gym.set(userId, machines); }
+  onboarding = new Map<string, import('@/lib/repositories/types').OnboardingData>();
+  async setOnboarding(userId: string, data: import('@/lib/repositories/types').OnboardingData) { this.onboarding.set(userId, data); }
 }

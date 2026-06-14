@@ -41,11 +41,22 @@ export interface MessageRepository {
   deleteMessageIds(userId: string, ids: string[]): Promise<void>;
 }
 
+export interface OnboardingData {
+  display_name?: string;
+  goals?: string[];
+  units?: string;
+  height_cm?: number;
+  weight_kg?: number;
+  age?: number;
+  activity_level?: string;
+}
+
 export interface ProfileRepository {
   getRollingSummary(userId: string): Promise<string | null>;
   setRollingSummary(userId: string, summary: string): Promise<void>;
   getGymMachines(userId: string): Promise<string[]>;
   setGymMachines(userId: string, machines: string[]): Promise<void>;
+  setOnboarding(userId: string, data: OnboardingData): Promise<void>;
 }
 
 export interface AliasRow {
