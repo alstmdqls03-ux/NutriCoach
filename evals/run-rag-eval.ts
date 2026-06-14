@@ -9,7 +9,7 @@ import { getLLM } from '../src/lib/llm';
 import { handleExplain, type ExplainDeps } from '../src/lib/rag/explain';
 import { translateToEnglish } from '../src/lib/rag/translate';
 import { embedTexts } from '../src/lib/rag/embed';
-import { retrieveChunks } from '../src/lib/rag/retrieve';
+import { retrieveChunks, hybridRetrieve } from '../src/lib/rag/retrieve';
 import { buildExplainMessages } from '../src/lib/rag/explainPrompt';
 import type { RetrievedChunk } from '../src/lib/rag/types';
 
@@ -34,10 +34,11 @@ async function main() {
 
   for (const c of CASES) {
     let retrieved: RetrievedChunk[] = [];
+    let lastEmbedding: number[] = [];
     const deps: ExplainDeps = {
       translate: (ko) => translateToEnglish(llm, ko),
-      embed: async (t) => (await embedTexts([t]))[0],
-      retrieve: async (emb, k) => { retrieved = await retrieveChunks(sb, emb, k); return retrieved; },
+      embed: async (t) => { lastEmbedding = (await embedTexts([t]))[0]; return lastEmbedding; },
+      retrieve: async (emb, queryText, k) => { retrieved = await hybridRetrieve(sb, emb, queryText, { k }); return retrieved; },
       explain: async (q, chunks) => (await llm.chat(buildExplainMessages(q, chunks), [])).content,
       labelFor: (id) => id, threshold: 0.5, k: 6,
     };
@@ -49,6 +50,12 @@ async function main() {
     const good = res.status === 200 && noFabrication && keywordHit;
     if (good) pass++;
     console.log(`${good ? 'PASS' : 'FAIL'} | ${c.q} | claims=${explanations.length} keywordHit=${keywordHit} noFabrication=${noFabrication}`);
+
+    // hybrid vs vector-only keyword recall (measured, not assumed)
+    const vecOnly = await retrieveChunks(sb, lastEmbedding, 6);
+    const hybridKw = retrieved.filter((r) => c.keyword.test(r.content)).length;
+    const vecKw = vecOnly.filter((r) => c.keyword.test(r.content)).length;
+    console.log(`  hybrid keyword-chunks=${hybridKw}  vector-only=${vecKw}`);
   }
 
   console.log(`\n${pass}/${CASES.length} passed`);
