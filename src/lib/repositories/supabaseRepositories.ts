@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
   LogRepository, MessageRepository, ProfileRepository,
   InsertLogInput, QueryLogInput, LogRow, StoredMessage,
+  MachineAliasRepository, AliasRow,
 } from './types';
 
 export function supabaseLogRepository(sb: SupabaseClient): LogRepository {
@@ -90,6 +91,39 @@ export function supabaseProfileRepository(sb: SupabaseClient): ProfileRepository
       const { error } = await sb.from('profiles')
         .update({ rolling_summary: summary }).eq('id', userId);
       if (error) throw new Error(`setRollingSummary failed: ${error.message}`);
+    },
+    async getGymMachines(userId): Promise<string[]> {
+      const { data, error } = await sb.from('profiles')
+        .select('gym_machines').eq('id', userId).maybeSingle();
+      if (error) throw new Error(`getGymMachines failed: ${error.message}`);
+      return (data?.gym_machines as string[] | null) ?? [];
+    },
+    async setGymMachines(userId, machines) {
+      const { error } = await sb.from('profiles')
+        .update({ gym_machines: machines }).eq('id', userId);
+      if (error) throw new Error(`setGymMachines failed: ${error.message}`);
+    },
+  };
+}
+
+export function supabaseMachineAliasRepository(sb: SupabaseClient): MachineAliasRepository {
+  return {
+    async listAliases(userId): Promise<AliasRow[]> {
+      const { data, error } = await sb.from('machine_aliases')
+        .select('id,alias,exercise_id').eq('user_id', userId);
+      if (error) throw new Error(`listAliases failed: ${error.message}`);
+      return (data ?? []) as AliasRow[];
+    },
+    async addAlias(userId, alias, exerciseId) {
+      const { error } = await sb.from('machine_aliases')
+        .upsert({ user_id: userId, alias, exercise_id: exerciseId },
+                { onConflict: 'user_id,alias' });
+      if (error) throw new Error(`addAlias failed: ${error.message}`);
+    },
+    async removeAlias(userId, id) {
+      const { error } = await sb.from('machine_aliases')
+        .delete().eq('user_id', userId).eq('id', id);
+      if (error) throw new Error(`removeAlias failed: ${error.message}`);
     },
   };
 }
