@@ -6,6 +6,7 @@ import Chat, { type Turn } from '@/components/Chat';
 import TabBar from '@/components/TabBar';
 import { RoutineBuilder } from '@/components/coach/RoutineBuilder';
 import { experienceFromActivity } from '@/lib/coach/experience';
+import type { Experience } from '@/lib/coach/types';
 
 const hanken = Hanken_Grotesk({ subsets: ['latin'], display: 'swap' });
 
@@ -27,10 +28,12 @@ export default async function CoachPage() {
     .map((r) => ({ role: r.role === 'user' ? 'user' : 'assistant', text: r.content as string }));
 
   const { data: profile } = await sb
-    .from('profiles').select('gym_machines, display_name, activity_level').eq('id', user.id).maybeSingle();
+    .from('profiles').select('gym_machines, display_name, activity_level, experience').eq('id', user.id).maybeSingle();
   const initialMachines = (profile?.gym_machines as string[] | null) ?? [];
   const displayName = (profile?.display_name as string | null) ?? null;
-  const initialExperience = experienceFromActivity(profile?.activity_level as string | null);
+  // Explicit onboarding experience wins; fall back to activity-derived.
+  const initialExperience = (profile?.experience as Experience | null)
+    ?? experienceFromActivity(profile?.activity_level as string | null);
 
   return (
     <div className={`bloom-theme ${hanken.className}`} style={{ fontFamily: hanken.style.fontFamily }}>

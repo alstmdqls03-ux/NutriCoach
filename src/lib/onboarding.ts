@@ -2,6 +2,7 @@ import type { OnboardingData, ProfileRepository } from '@/lib/repositories/types
 
 const ACTIVITY = ['start', 'light', 'moderate', 'very'];
 const GOAL_IDS = ['lose', 'muscle', 'active', 'endurance', 'stress', 'eat'];
+const EXPERIENCES = ['beginner', 'intermediate', 'advanced'];
 
 function num(v: unknown): number | undefined {
   const n = typeof v === 'string' ? parseInt(v, 10) : typeof v === 'number' ? v : NaN;
@@ -19,6 +20,7 @@ export async function handleOnboarding(body: unknown, profiles: ProfileRepositor
     height_cm: metric ? num(b.heightCm) : undefined,
     weight_kg: metric ? num(b.weightKg) : undefined,
     age: num(b.age),
+    experience: typeof b.experience === 'string' && EXPERIENCES.includes(b.experience) ? b.experience : undefined,
     activity_level: typeof b.activity === 'string' && ACTIVITY.includes(b.activity) ? b.activity : undefined,
   };
   await profiles.setOnboarding(userId, data);

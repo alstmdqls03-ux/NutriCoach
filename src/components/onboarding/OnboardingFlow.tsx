@@ -18,11 +18,15 @@ export function OnboardingFlow() {
   // Seed the metrics defaults shown on the Metrics screen so they persist when
   // the user accepts them by tapping Continue without editing.
   const [data, setData] = useState<OnboardData>({
-    units: 'Metric', heightCm: '172', weightKg: '68', heightIn: '68', weightLb: '150', age: '28',
+    units: 'Metric', heightCm: '172', weightKg: '68', heightIn: '68', weightLb: '150', age: '28', experience: 'beginner',
   });
   const [busy, setBusy] = useState(false);
+  // Gate persistence on restore completing. Without this, the persist effect
+  // runs on mount with the initial i=0 and clobbers saved progress before the
+  // restore effect's setI re-renders — refreshing mid-onboarding reset to step 0.
+  const [hydrated, setHydrated] = useState(false);
 
-  // restore progress
+  // restore progress (effect, not lazy useState — avoids SSR hydration mismatch)
   useEffect(() => {
     try {
       const raw = localStorage.getItem(LS_KEY);
@@ -32,11 +36,13 @@ export function OnboardingFlow() {
         if (saved.data) setData(saved.data);
       }
     } catch { /* ignore */ }
+    setHydrated(true);
   }, []);
-  // persist
+  // persist (only after restore, so we never overwrite saved progress with the default)
   useEffect(() => {
+    if (!hydrated) return;
     try { localStorage.setItem(LS_KEY, JSON.stringify({ i, data })); } catch { /* ignore */ }
-  }, [i, data]);
+  }, [i, data, hydrated]);
 
   const step = STEPS[i];
   const next = () => setI((n) => Math.min(n + 1, STEPS.length - 1));

@@ -48,6 +48,7 @@ export interface OnboardingData {
   height_cm?: number;
   weight_kg?: number;
   age?: number;
+  experience?: string;
   activity_level?: string;
 }
 
