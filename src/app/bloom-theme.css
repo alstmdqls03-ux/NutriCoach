@@ -1,0 +1,27 @@
+/* Shared Bloom theme tokens (no phone-frame) — apply .bloom-theme to a screen. */
+.bloom-theme {
+  --bg: #121214;
+  --bg-elev: #1D1D20;
+  --bg-elev2: #27272B;
+  --hair: rgba(255, 255, 255, 0.10);
+  --track: rgba(255, 255, 255, 0.12);
+  --text: #F2F2F4;
+  --text-2: #AEAEB4;
+  --text-3: #79797F;
+  --accent: #D7F26A;
+  --accent-ink: #1B2207;
+  --accent-soft: rgba(215, 242, 106, 0.10);
+  --r-card: 22px;
+  --r-btn: 18px;
+
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+.bloom-theme * { box-sizing: border-box; }
+.bloom-theme button { font-family: inherit; }
+.bloom-theme input, .bloom-theme select, .bloom-theme textarea { font-family: inherit; }
+.bloom-theme ::placeholder { color: var(--text-3); }
+/* native select dark dropdowns */
+.bloom-theme select option { background: var(--bg-elev); color: var(--text); }
