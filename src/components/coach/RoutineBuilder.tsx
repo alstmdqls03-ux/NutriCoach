@@ -98,15 +98,19 @@ export function RoutineBuilder({ initialMachines = [] }: { initialMachines?: str
 }
 
 function ExplainPanel({ targetMuscle }: { targetMuscle: string }) {
+  const defaultQ = `${targetMuscle} 근비대를 위해 어떻게 훈련해야 하나요? 볼륨, 강도, 실패 근접도 관점에서.`;
+  const [question, setQuestion] = useState(defaultQ);
   const [data, setData] = useState<{ explanations: { claim: string; chunk_ids: string[] }[]; citations: { chunk_id: string; label: string; snippet: string }[] } | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function ask() {
+    const q = question.trim();
+    if (!q) return;
     setBusy(true); setData(null);
     try {
       const r = await fetch('/api/coach/explain', {
         method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ question: `${targetMuscle} 근비대를 위해 어떻게 훈련해야 하나요? 볼륨, 강도, 실패 근접도 관점에서.` }),
+        body: JSON.stringify({ question: q }),
       });
       if (r.ok) setData(await r.json());
     } finally {
@@ -117,8 +121,14 @@ function ExplainPanel({ targetMuscle }: { targetMuscle: string }) {
   const citeIndex = (id: string) => (data ? data.citations.findIndex((c) => c.chunk_id === id) + 1 : 0);
 
   return (
-    <div style={{ marginTop: 12 }}>
-      <button onClick={ask} disabled={busy}>{busy ? '근거 찾는 중…' : '왜 이 루틴? (논문 근거)'}</button>
+    <div style={{ marginTop: 12, display: 'grid', gap: 6 }}>
+      <label style={{ fontSize: 13, color: '#555' }}>
+        논문에 물어보기 (직접 질문 입력)
+        <textarea value={question} onChange={(e) => setQuestion(e.target.value)} rows={2}
+          placeholder="예: 레그프레스 발 위치는 어디가 좋아? / 초보자는 주당 며칠?"
+          style={{ width: '100%', marginTop: 2 }} />
+      </label>
+      <button onClick={ask} disabled={busy}>{busy ? '근거 찾는 중…' : '왜? (논문 근거 찾기)'}</button>
       {data && (
         <div style={{ marginTop: 8 }}>
           {data.explanations.length === 0 && <p style={{ color: '#777' }}>근거 있는 설명을 찾지 못했어요.</p>}

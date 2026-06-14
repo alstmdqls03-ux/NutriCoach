@@ -1,15 +1,33 @@
-# Your gym's machine names — one per line. `#` lines are ignored.
-# Replace the examples below with the ACTUAL machines at your gym
-# (use the exact Korean names you'd type), then run: npm run probe:mapping
-펙덱
-체스트프레스
-랫풀다운
-시티드로우
-레그프레스
-레그익스텐션
-레그컬
-숄더프레스
-# --- examples likely to MISS (no alias yet) — keep or replace ---
-어시스트치닝
-케이블크로스오버
-힙쓰러스트머신
+# Popular gym machines by body part (English). Replace with YOUR gym's machines.
+# Run: npm run probe:mapping
+# Chest
+Chest Press
+Pec Deck
+Cable Crossover
+# Back
+Lat Pulldown
+Seated Cable Row
+T-Bar Row
+Iso Row
+# Shoulders
+Shoulder Press
+Reverse Pec Deck
+Lateral Raise Machine
+# Arms
+Bicep Curl Machine
+Preacher Curl
+Tricep Extension Machine
+Dip Machine
+# Legs
+Leg Press
+Leg Extension
+Hack Squat
+Lying Leg Curl
+Seated Leg Curl
+# Glutes / Calves
+Cable Kickback
+Seated Calf Raise
+Calf Press
+# Core
+Ab Crunch Machine
+Cable Crunch
