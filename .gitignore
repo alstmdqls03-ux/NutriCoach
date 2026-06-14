@@ -42,3 +42,7 @@ next-env.d.ts
 
 # Supabase CLI cache
 supabase/.temp/
+
+# RAG probe papers (do not commit copyrighted full text)
+evals/rag-papers/*
+!evals/rag-papers/README.md

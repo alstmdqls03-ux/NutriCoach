@@ -1,0 +1,9 @@
+# Korean questions to test cross-lingual retrieval — one per line, `#` ignored.
+# These are the kinds of things the coach must answer from the papers.
+가슴 볼륨 일주일에 얼마나 해야 하나요
+초보자 운동 빈도는 어느 정도가 좋나요
+점진적 과부하란 무엇인가요
+세트당 몇 회 반복이 근비대에 좋나요
+근육 성장에 휴식 시간은 얼마나 중요한가요
+실패 지점까지 운동해야 하나요
+주당 세트 수와 근비대의 관계는
