@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabase/server';
 import Chat, { type Turn } from '@/components/Chat';
 import TabBar from '@/components/TabBar';
+import { RoutineBuilder } from '@/components/coach/RoutineBuilder';
 
 export default async function CoachPage() {
   const sb = await supabaseServer();
@@ -22,5 +23,5 @@ export default async function CoachPage() {
     .reverse()
     .map((r) => ({ role: r.role === 'user' ? 'user' : 'assistant', text: r.content as string }));
 
-  return (<><Chat initialTurns={initialTurns} /><TabBar /></>);
+  return (<><RoutineBuilder /><Chat initialTurns={initialTurns} /><TabBar /></>);
 }
