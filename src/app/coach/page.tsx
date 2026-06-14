@@ -23,5 +23,9 @@ export default async function CoachPage() {
     .reverse()
     .map((r) => ({ role: r.role === 'user' ? 'user' : 'assistant', text: r.content as string }));
 
-  return (<><RoutineBuilder /><Chat initialTurns={initialTurns} /><TabBar /></>);
+  const { data: profile } = await sb
+    .from('profiles').select('gym_machines').eq('id', user.id).maybeSingle();
+  const initialMachines = (profile?.gym_machines as string[] | null) ?? [];
+
+  return (<><RoutineBuilder initialMachines={initialMachines} /><Chat initialTurns={initialTurns} /><TabBar /></>);
 }

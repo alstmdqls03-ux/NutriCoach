@@ -44,4 +44,18 @@ export interface MessageRepository {
 export interface ProfileRepository {
   getRollingSummary(userId: string): Promise<string | null>;
   setRollingSummary(userId: string, summary: string): Promise<void>;
+  getGymMachines(userId: string): Promise<string[]>;
+  setGymMachines(userId: string, machines: string[]): Promise<void>;
+}
+
+export interface AliasRow {
+  id: string;
+  alias: string;
+  exercise_id: string;
+}
+
+export interface MachineAliasRepository {
+  listAliases(userId: string): Promise<AliasRow[]>;
+  addAlias(userId: string, alias: string, exerciseId: string): Promise<void>;
+  removeAlias(userId: string, id: string): Promise<void>;
 }

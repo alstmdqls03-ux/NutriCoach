@@ -53,6 +53,9 @@ function strip(r: StoredMessage & { userId: string }): StoredMessage {
 
 export class FakeProfileRepository implements ProfileRepository {
   summaries = new Map<string, string>();
+  gym = new Map<string, string[]>();
   async getRollingSummary(userId: string) { return this.summaries.get(userId) ?? null; }
   async setRollingSummary(userId: string, s: string) { this.summaries.set(userId, s); }
+  async getGymMachines(userId: string) { return this.gym.get(userId) ?? []; }
+  async setGymMachines(userId: string, machines: string[]) { this.gym.set(userId, machines); }
 }
