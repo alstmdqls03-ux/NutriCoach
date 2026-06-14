@@ -11,8 +11,12 @@ export interface OnboardData {
   units?: 'Metric' | 'Imperial';
   heightCm?: string; weightKg?: string; heightIn?: string; weightLb?: string;
   age?: string;
+  experience?: 'beginner' | 'intermediate' | 'advanced';
   activity?: string;
 }
+
+const EXP_TO_KO: Record<string, string> = { beginner: '초급', intermediate: '중급', advanced: '고급' };
+const KO_TO_EXP: Record<string, 'beginner' | 'intermediate' | 'advanced'> = { '초급': 'beginner', '중급': 'intermediate', '고급': 'advanced' };
 type Patch = Partial<OnboardData> | ((d: OnboardData) => Partial<OnboardData>);
 type Set = (p: Patch) => void;
 interface Progress { n: number; i: number }
@@ -312,6 +316,12 @@ export function MetricsScreen({ data, set, next, back, progress }: { data: Onboa
           <MetricField label="Age">
             <Stepper value={parseInt(data.age || '28', 10)} min={13} max={99} onChange={(a) => set({ age: String(a) })} />
           </MetricField>
+        </div>
+        <div style={{ marginTop: 20 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-2)', marginBottom: 10 }}>웨이트 트레이닝 경험</div>
+          <Seg options={['초급', '중급', '고급']}
+            value={EXP_TO_KO[data.experience || 'beginner']}
+            onChange={(ko) => set({ experience: KO_TO_EXP[ko] })} />
         </div>
       </div>
     </ScreenShell>

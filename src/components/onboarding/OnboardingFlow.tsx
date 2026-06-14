@@ -18,7 +18,7 @@ export function OnboardingFlow() {
   // Seed the metrics defaults shown on the Metrics screen so they persist when
   // the user accepts them by tapping Continue without editing.
   const [data, setData] = useState<OnboardData>({
-    units: 'Metric', heightCm: '172', weightKg: '68', heightIn: '68', weightLb: '150', age: '28',
+    units: 'Metric', heightCm: '172', weightKg: '68', heightIn: '68', weightLb: '150', age: '28', experience: 'beginner',
   });
   const [busy, setBusy] = useState(false);
 

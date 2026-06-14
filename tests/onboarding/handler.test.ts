@@ -6,12 +6,12 @@ describe('handleOnboarding', () => {
   it('normalizes the client payload (strings -> numbers, goal allowlist, name trim)', async () => {
     const repo = new FakeProfileRepository();
     await handleOnboarding(
-      { name: '  Min  ', goals: ['muscle', 'active', 'BOGUS'], units: 'Metric', heightCm: '178', weightKg: '74', age: '29', activity: 'moderate' },
+      { name: '  Min  ', goals: ['muscle', 'active', 'BOGUS'], units: 'Metric', heightCm: '178', weightKg: '74', age: '29', experience: 'advanced', activity: 'moderate' },
       repo, 'u1',
     );
     expect(repo.onboarding.get('u1')).toEqual({
       display_name: 'Min', goals: ['muscle', 'active'], units: 'Metric',
-      height_cm: 178, weight_kg: 74, age: 29, activity_level: 'moderate',
+      height_cm: 178, weight_kg: 74, age: 29, experience: 'advanced', activity_level: 'moderate',
     });
   });
 
