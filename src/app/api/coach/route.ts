@@ -1,39 +1,11 @@
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/server';
-import { supabaseLogRepository } from '@/lib/repositories/supabaseRepositories';
+import {
+  supabaseLogRepository, supabaseProfileRepository, supabaseMachineAliasRepository,
+} from '@/lib/repositories/supabaseRepositories';
 import type { LogRepository } from '@/lib/repositories/types';
-import { buildCoachResponse } from '@/lib/coach';
-import type { CoachInput, CoachResponse, Experience } from '@/lib/coach/types';
-
-const EXPERIENCES: Experience[] = ['beginner', 'intermediate', 'advanced'];
-
-export interface CoachHandlerArgs {
-  body: unknown;
-  logs: LogRepository;
-}
-export interface CoachHandlerResult {
-  status: number;
-  body: CoachResponse | { error: string };
-}
-
-/** Pure core: validate input, read history, assemble response. Unit-testable. */
-export async function handleCoach({ body, logs }: CoachHandlerArgs): Promise<CoachHandlerResult> {
-  const b = (body ?? {}) as Record<string, unknown>;
-  const machines = Array.isArray(b.machines) ? b.machines.filter((m): m is string => typeof m === 'string') : [];
-  const targetMuscle = typeof b.targetMuscle === 'string' ? b.targetMuscle : '';
-  const experience = EXPERIENCES.includes(b.experience as Experience) ? (b.experience as Experience) : null;
-
-  if (machines.length === 0) return { status: 400, body: { error: '머신 목록을 입력해주세요.' } };
-  if (!targetMuscle) return { status: 400, body: { error: '타겟 부위를 입력해주세요.' } };
-  if (!experience) return { status: 400, body: { error: '경험 수준을 선택해주세요.' } };
-
-  const input: CoachInput = {
-    machines, targetMuscle, experience,
-    estimate: typeof b.estimate === 'string' ? (b.estimate as CoachInput['estimate']) : undefined,
-  };
-  const history = await logs.queryLogs({ userId: '_self', type: 'workout' });
-  return { status: 200, body: buildCoachResponse(input, history) };
-}
+import { handleCoach } from '@/lib/coach/handlers';
+import { DEFAULT_MACHINE_ALIASES, type AliasMap } from '@/lib/coach/machineMap';
 
 export async function POST(req: Request) {
   const sb = await supabaseServer();
@@ -42,12 +14,22 @@ export async function POST(req: Request) {
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
   const body = await req.json().catch(() => null);
-  // The repository is RLS-scoped to the signed-in user; pass the real userId.
   const logs = supabaseLogRepository(sb);
   const scoped: LogRepository = { ...logs, queryLogs: (i) => logs.queryLogs({ ...i, userId: user.id }) };
 
   try {
-    const res = await handleCoach({ body, logs: scoped });
+    const userAliases = await supabaseMachineAliasRepository(sb).listAliases(user.id);
+    const aliases: AliasMap = { ...DEFAULT_MACHINE_ALIASES };
+    for (const a of userAliases) aliases[a.alias] = a.exercise_id;
+
+    const res = await handleCoach({ body, logs: scoped, aliases });
+
+    // Persist the gym list the user just used (best-effort; never blocks the response).
+    const b = (body ?? {}) as Record<string, unknown>;
+    if (res.status === 200 && Array.isArray(b.machines)) {
+      const machines = b.machines.filter((m): m is string => typeof m === 'string');
+      await supabaseProfileRepository(sb).setGymMachines(user.id, machines).catch(() => {});
+    }
     return NextResponse.json(res.body, { status: res.status });
   } catch (e) {
     console.error('coach error', e);
