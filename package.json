@@ -11,7 +11,10 @@
     "test:watch": "vitest",
     "eval:extraction": "tsx evals/run-extraction-eval.ts",
     "probe:mapping": "tsx evals/probe-machine-mapping.ts",
-    "probe:recall": "tsx evals/probe-cross-lingual.ts"
+    "probe:recall": "tsx evals/probe-cross-lingual.ts",
+    "rag:fetch": "tsx evals/fetch-papers.ts",
+    "rag:ingest": "tsx evals/ingest-rag.ts",
+    "eval:rag": "tsx evals/run-rag-eval.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",
