@@ -1,0 +1,46 @@
+/* Bloom onboarding theme — scoped to .bloom (tokens from the design handoff). */
+.bloom {
+  --bg: #121214;
+  --bg-elev: #1D1D20;
+  --bg-elev2: #27272B;
+  --hair: rgba(255, 255, 255, 0.10);
+  --track: rgba(255, 255, 255, 0.12);
+  --text: #F2F2F4;
+  --text-2: #AEAEB4;
+  --text-3: #79797F;
+  --accent: #D7F26A;
+  --accent-ink: #1B2207;
+  --accent-soft: rgba(215, 242, 106, 0.10);
+  --r-card: 22px;
+  --r-btn: 18px;
+
+  position: fixed;
+  inset: 0;
+  background: #0c0b0a;
+  color: var(--text);
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  -webkit-font-smoothing: antialiased;
+}
+.bloom * { box-sizing: border-box; }
+.bloom button { font-family: inherit; }
+
+/* The phone-width column the flow lives in. */
+.bloom-screen {
+  width: 100%;
+  max-width: 430px;
+  height: 100%;
+  background: var(--bg);
+  overflow: hidden;
+  position: relative;
+}
+.bloom-screen ::-webkit-scrollbar { width: 0; height: 0; }
+.bloom-screen * { scrollbar-width: none; }
+
+/* slide-in between steps (transform-only) */
+@keyframes bloom-slide {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.bloom-slide { animation: bloom-slide 0.32s cubic-bezier(0.22, 1, 0.36, 1); height: 100%; }

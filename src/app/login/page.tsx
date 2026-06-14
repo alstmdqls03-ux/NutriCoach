@@ -67,6 +67,9 @@ export default function LoginPage() {
       <p style={{ marginTop: 12 }}>
         <a href="/reset" style={{ fontSize: 13, color: '#0070f3' }}>비밀번호를 잊으셨나요?</a>
       </p>
+      <p style={{ marginTop: 4 }}>
+        <a href="/onboarding" style={{ fontSize: 13, color: '#0070f3' }}>처음이신가요? 시작하기 →</a>
+      </p>
     </main>
   );
 }
