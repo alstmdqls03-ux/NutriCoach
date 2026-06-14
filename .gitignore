@@ -46,3 +46,6 @@ supabase/.temp/
 # RAG probe papers (do not commit copyrighted full text)
 evals/rag-papers/*
 !evals/rag-papers/README.md
+
+# Claude Code local agent state (contains secrets/worktrees — never commit)
+.claude/
