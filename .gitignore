@@ -39,3 +39,6 @@ next-env.d.ts
 .worktrees/
 .planning/
 .gstack/
+
+# Supabase CLI cache
+supabase/.temp/
