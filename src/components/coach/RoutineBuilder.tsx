@@ -8,23 +8,29 @@ const EXPERIENCES: { value: Experience; label: string }[] = [
   { value: 'advanced', label: '고급' },
 ];
 
-export function RoutineBuilder() {
-  const [machines, setMachines] = useState('');
+// Korean body-part terms offered in the alias picker (keys of the target-muscle map).
+const BODY_PARTS = ['가슴', '등', '어깨', '이두', '삼두', '하체', '둔근', '복근'];
+
+interface Choice { id: string; name: string; }
+
+export function RoutineBuilder({ initialMachines = [] }: { initialMachines?: string[] }) {
+  const [machines, setMachines] = useState(initialMachines.join(', '));
   const [targetMuscle, setTargetMuscle] = useState('가슴');
   const [experience, setExperience] = useState<Experience>('beginner');
   const [res, setRes] = useState<CoachResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function submit() {
-    setLoading(true); setError(null); setRes(null);
+  function machineList() {
+    return machines.split(',').map((s) => s.trim()).filter(Boolean);
+  }
+
+  async function generate(list: string[]) {
+    setLoading(true); setError(null);
     try {
       const r = await fetch('/api/coach', {
         method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          machines: machines.split(',').map((s) => s.trim()).filter(Boolean),
-          targetMuscle, experience,
-        }),
+        body: JSON.stringify({ machines: list, targetMuscle, experience }),
       });
       const body = await r.json();
       if (!r.ok) { setError(body.error ?? '문제가 생겼어요.'); return; }
@@ -34,6 +40,11 @@ export function RoutineBuilder() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function submit() {
+    setRes(null);
+    generate(machineList());
   }
 
   return (
@@ -60,11 +71,9 @@ export function RoutineBuilder() {
 
       {res && (
         <div style={{ display: 'grid', gap: 8 }}>
-          {res.misses.length > 0 && (
-            <p style={{ color: '#b26a00' }}>
-              미매핑: {res.misses.map((m) => m.input).join(', ')} — 별칭 등록이 필요해요.
-            </p>
-          )}
+          {res.misses.map((m) => (
+            <AliasForm key={m.input} alias={m.input} onRegistered={() => generate(machineList())} />
+          ))}
           <h3>{res.routine.targetMuscle} 루틴</h3>
           {res.routine.exercises.length === 0 && <p>해당 부위로 매칭된 머신이 없어요.</p>}
           <ul>
@@ -84,5 +93,50 @@ export function RoutineBuilder() {
         </div>
       )}
     </section>
+  );
+}
+
+function AliasForm({ alias, onRegistered }: { alias: string; onRegistered: () => void }) {
+  const [muscle, setMuscle] = useState('');
+  const [choices, setChoices] = useState<Choice[]>([]);
+  const [exerciseId, setExerciseId] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  async function loadChoices(m: string) {
+    setMuscle(m); setExerciseId(''); setChoices([]);
+    if (!m) return;
+    const r = await fetch(`/api/coach/exercises?muscle=${encodeURIComponent(m)}`);
+    if (r.ok) setChoices(await r.json());
+  }
+
+  async function register() {
+    if (!exerciseId) return;
+    setBusy(true);
+    try {
+      const r = await fetch('/api/coach/aliases', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ alias, exerciseId }),
+      });
+      if (r.ok) onRegistered();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div style={{ color: '#b26a00', border: '1px solid #f0d9b5', padding: 8, borderRadius: 6 }}>
+      <div>미매핑: <strong>{alias}</strong> — 별칭 등록</div>
+      <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+        <select value={muscle} onChange={(e) => loadChoices(e.target.value)}>
+          <option value="">부위 선택</option>
+          {BODY_PARTS.map((b) => <option key={b} value={b}>{b}</option>)}
+        </select>
+        <select value={exerciseId} onChange={(e) => setExerciseId(e.target.value)} disabled={choices.length === 0}>
+          <option value="">기구 선택</option>
+          {choices.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+        <button onClick={register} disabled={!exerciseId || busy}>{busy ? '등록 중…' : '등록'}</button>
+      </div>
+    </div>
   );
 }
