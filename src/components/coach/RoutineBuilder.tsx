@@ -90,9 +90,53 @@ export function RoutineBuilder({ initialMachines = [] }: { initialMachines?: str
               );
             })}
           </ul>
+          {res.routine.exercises.length > 0 && <ExplainPanel targetMuscle={res.routine.targetMuscle} />}
         </div>
       )}
     </section>
+  );
+}
+
+function ExplainPanel({ targetMuscle }: { targetMuscle: string }) {
+  const [data, setData] = useState<{ explanations: { claim: string; chunk_ids: string[] }[]; citations: { chunk_id: string; label: string; snippet: string }[] } | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function ask() {
+    setBusy(true); setData(null);
+    try {
+      const r = await fetch('/api/coach/explain', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ question: `${targetMuscle} 근비대를 위해 어떻게 훈련해야 하나요? 볼륨, 강도, 실패 근접도 관점에서.` }),
+      });
+      if (r.ok) setData(await r.json());
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const citeIndex = (id: string) => (data ? data.citations.findIndex((c) => c.chunk_id === id) + 1 : 0);
+
+  return (
+    <div style={{ marginTop: 12 }}>
+      <button onClick={ask} disabled={busy}>{busy ? '근거 찾는 중…' : '왜 이 루틴? (논문 근거)'}</button>
+      {data && (
+        <div style={{ marginTop: 8 }}>
+          {data.explanations.length === 0 && <p style={{ color: '#777' }}>근거 있는 설명을 찾지 못했어요.</p>}
+          <ul>
+            {data.explanations.map((e, i) => (
+              <li key={i}>
+                {e.claim} {e.chunk_ids.map((id) => <sup key={id}>[{citeIndex(id)}]</sup>)}
+              </li>
+            ))}
+          </ul>
+          {data.citations.length > 0 && (
+            <ol style={{ fontSize: 12, color: '#555' }}>
+              {data.citations.map((c) => <li key={c.chunk_id}>{c.label} — {c.snippet}…</li>)}
+            </ol>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
