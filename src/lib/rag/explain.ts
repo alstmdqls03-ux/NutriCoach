@@ -5,7 +5,7 @@ import { parseExplainJson } from './explainPrompt';
 export interface ExplainDeps {
   translate: (korean: string) => Promise<string>;
   embed: (text: string) => Promise<number[]>;
-  retrieve: (embedding: number[], k: number) => Promise<RetrievedChunk[]>;
+  retrieve: (embedding: number[], queryText: string, k: number) => Promise<RetrievedChunk[]>;
   explain: (question: string, chunks: RetrievedChunk[]) => Promise<string | null>;
   labelFor: (paperId: string) => string;  // paper_id -> citation label
   threshold: number;
@@ -22,7 +22,7 @@ export async function handleExplain({ body, deps }: ExplainArgs): Promise<Explai
 
   const en = await deps.translate(question);
   const embedding = await deps.embed(en);
-  const chunks = await deps.retrieve(embedding, deps.k);
+  const chunks = await deps.retrieve(embedding, en, deps.k);
 
   const retrievedIds = new Set(chunks.map((c) => c.chunk_id));
   const textById = new Map(chunks.map((c) => [c.chunk_id, c.content]));
