@@ -4,7 +4,7 @@ import { getLLM } from '@/lib/llm';
 import { handleExplain, type ExplainDeps } from '@/lib/rag/explain';
 import { translateToEnglish } from '@/lib/rag/translate';
 import { embedTexts } from '@/lib/rag/embed';
-import { retrieveChunks } from '@/lib/rag/retrieve';
+import { hybridRetrieve } from '@/lib/rag/retrieve';
 import { buildExplainMessages } from '@/lib/rag/explainPrompt';
 
 const GROUNDING_THRESHOLD = 0.5; // provisional; tune via eval
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
   const deps: ExplainDeps = {
     translate: (ko) => translateToEnglish(llm, ko),
     embed: async (t) => (await embedTexts([t]))[0],
-    retrieve: (emb, k) => retrieveChunks(sb, emb, k),
+    retrieve: (emb, queryText, k) => hybridRetrieve(sb, emb, queryText, { k }),
     explain: async (q, chunks) => (await llm.chat(buildExplainMessages(q, chunks), [])).content,
     labelFor: (id) => labels.get(id) ?? id,
     threshold: GROUNDING_THRESHOLD,

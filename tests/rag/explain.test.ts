@@ -10,7 +10,7 @@ function deps(llmJson: string): ExplainDeps {
   return {
     translate: async () => 'weekly volume hypertrophy',
     embed: async () => [0.1, 0.2],
-    retrieve: async () => chunks,
+    retrieve: async (_emb: number[], _q: string, _k: number) => chunks,
     explain: async () => llmJson,
     labelFor: () => 'Test 2022',
     threshold: 0.5,
@@ -38,5 +38,12 @@ describe('handleExplain', () => {
     const json = '{"explanations":[{"claim_ko":"환각","evidence_en":"weekly volume hypertrophy","chunk_ids":["FAKE#9-zz"]}]}';
     const r = await handleExplain({ body: { question: '가슴 볼륨' }, deps: deps(json) });
     if ('explanations' in r.body) expect(r.body.explanations).toEqual([]);
+  });
+
+  it('passes the translated English query to retrieve (for FTS)', async () => {
+    let seen = '';
+    const d: ExplainDeps = { ...deps('{}'), retrieve: async (_e: number[], q: string) => { seen = q; return chunks; } };
+    await handleExplain({ body: { question: '가슴 볼륨' }, deps: d });
+    expect(seen).toBe('weekly volume hypertrophy'); // deps.translate returns this
   });
 });
