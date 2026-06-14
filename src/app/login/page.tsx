@@ -13,6 +13,10 @@ export default function LoginPage() {
   async function handle(kind: 'signin' | 'signup') {
     if (busy) return;
     setMsg('');
+    // Validate client-side so empty fields show a Korean message instead of
+    // leaking Supabase's raw English error ("missing email or phone").
+    if (!email.trim() || !password) { setMsg('이메일과 비밀번호를 입력해주세요.'); return; }
+    if (password.length < 6) { setMsg('비밀번호는 6자 이상이어야 해요.'); return; }
     setBusy(true);
     try {
       const sb = supabaseBrowser();
